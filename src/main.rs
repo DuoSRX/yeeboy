@@ -15,6 +15,36 @@ struct Console {
     cpu: Cpu,
     gpu: Gpu,
     memory: Memory,
+    running: bool,
+}
+
+impl Console {
+    fn new() -> Self {
+        let gpu = Gpu::new();
+        let memory = Memory::new();
+
+        Self {
+            cpu: Cpu::new(),
+            gpu,
+            memory,
+            running: false,
+        }
+    }
+
+    fn run(&mut self) {
+        while self.running {
+           self.cpu.step(&mut self.memory);
+           self.gpu.step();
+           // Reset cycle counter
+           // CPU step
+           // Check for LCD_ON
+           // GPU step
+           // Check for interrupts
+           // Check for new GPU frame IF LCD is on
+           // Trace if steps is > 400_000
+           // Repeat until self.running == false
+        }
+    }
 }
 
 #[derive(Debug)]
