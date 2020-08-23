@@ -23,7 +23,7 @@ pub struct Registers {
 }
 
 impl Registers {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             a: 1,
             b: 0,
