@@ -1,13 +1,20 @@
 use crate::register::{Registers, Register, Register16, Register::*, Register16::*};
 use crate::memory::Memory;
 
+enum Flag {
+    Z, // Zero
+    N, // Negative
+    H, // Half-carry
+    C, // Carry
+}
+
 #[derive(Debug)]
 pub enum Storage {
     Register(Register),
     Pointer(Register16)
 }
 
-use Storage::*;
+// use Storage::*;
 
 #[derive(Debug)]
 pub enum Instruction {
@@ -26,9 +33,9 @@ pub fn decode(opcode: u8) -> Instruction {
         0x00 => NOP,
         0x01 => LdNN(BC),
         0x06 => LdN(B),
-        0x87 => Adc(Register(B)),
-        0x20 => Sla(Register(B)),
-        0x46 => Bit(0, Pointer(HL)),
+        // 0x87 => Adc(Register(B)),
+        // 0x20 => Sla(Register(B)),
+        // 0x46 => Bit(0, Pointer(HL)),
         _ => NOP
     }
 }
@@ -67,6 +74,7 @@ impl Cpu {
         match instruction {
             LdN(r) => { let b = self.load_byte(); self.registers.set(r, b); 8 },
             LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); 12 },
+            NOP => 4,
             _ => unimplemented!("{:?}", instruction),
         }
     }
@@ -139,4 +147,13 @@ mod tests {
         assert_eq!(cpu.registers.c, 0x34);
         assert_eq!(cpu.cycles, 12);
     }
+
+    #[test]
+    fn test_nop() {
+        let mut cpu = Cpu::new();
+        cpu.memory.store(cpu.pc, 0x00);
+        cpu.step();
+        assert_eq!(cpu.cycles, 4);
+    }
+
 }
