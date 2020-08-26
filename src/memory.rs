@@ -28,4 +28,11 @@ impl Memory {
     pub fn store(&mut self, address: u16, value: u8) {
         self.wram[address as usize] = value;
     }
+
+    pub fn load16(&mut self, address: u16) -> u16 {
+        let lo = self.wram[address as usize] as u16;
+        let hi = self.wram[address as usize + 1] as u16;
+        lo | (hi << 8)
+    }
 }
+
