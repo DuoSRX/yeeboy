@@ -24,6 +24,7 @@ pub struct Registers {
 }
 
 use Register::*;
+use Register16::*;
 
 impl Registers {
     pub fn new() -> Self {
@@ -50,6 +51,18 @@ impl Registers {
             F => self.f = value,
             H => self.h = value,
             L => self.l = value,
+        }
+    }
+
+    pub fn set16(&mut self, register: Register16, value: u16) {
+        let hi = (value >> 8) as u8;
+        let lo = (value & 0xFF) as u8;
+        match register {
+            AF => { self.a = hi; self.f = lo }
+            BC => { self.b = hi; self.c = lo }
+            DE => { self.b = hi; self.c = lo }
+            HL => { self.b = hi; self.c = lo }
+            SP => self.sp = value
         }
     }
 }
