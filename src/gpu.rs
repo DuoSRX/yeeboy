@@ -1,3 +1,5 @@
+// use crate::memory::Memory;
+
 pub struct Gpu {} // TODO
 
 impl Gpu {
