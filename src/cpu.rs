@@ -33,7 +33,7 @@ use Instruction::*;
 // Array containing all the instructions indexed by opcode.
 // Tuple format: (Instruction, number of cycles, human readable string)
 // Does not include the CB instructions which will be stored in a different array.
-static OPCODES: [(Instruction, u32, &'static str); 0x10] = [
+static OPCODES: [(Instruction, u64, &'static str); 0x10] = [
     // 0x
     (NOP,            4,  "NOP"),
     (LdNN(BC),       12, "LD BC, nn"),
@@ -54,11 +54,6 @@ static OPCODES: [(Instruction, u32, &'static str); 0x10] = [
     // 1x
     // TODO
 ];
-
-pub fn decode(opcode: u8) -> Instruction {
-    // let (instruction, _cycles, _desc) = &OPCODES[opcode as usize];
-    OPCODES[opcode as usize].0
-}
 
 pub struct Cpu {
     pub pc: u16,
@@ -85,16 +80,23 @@ impl Cpu {
     // - Increment the cycle count
     pub fn step(&mut self) {
         let opcode = self.load_and_bump_pc();
-        let instruction = decode(opcode);
-        self.cycles += self.execute(instruction);
+        let (instruction, cycles, _descr) = Self::decode(opcode);
+        // dbg!(descr);
+        self.execute(instruction);
+        self.cycles += cycles;
+    }
+
+    pub fn decode(opcode: u8) -> (Instruction, u64, &'static str) {
+        // TODO: CB opcodes
+        OPCODES[opcode as usize]
     }
 
     // Execute an instruction and returns the number of cycles taken
-    pub fn execute(&mut self, instruction: Instruction) -> u64 {
+    pub fn execute(&mut self, instruction: Instruction)  {
         match instruction {
-            LdN(r) => { let b = self.load_byte(); self.registers.set8(r, b); 8 },
-            LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); 12 },
-            NOP => 4,
+            LdN(r) => { let b = self.load_byte(); self.registers.set8(r, b); },
+            LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); },
+            NOP => {},
             _ => unimplemented!("{:?}", instruction),
         }
     }
