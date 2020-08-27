@@ -1,4 +1,4 @@
-use crate::register::{Registers, Register, Register16, Register::*, Register16::*};
+use crate::register::{Registers, Register8, Register16, Register8::*, Register16::*};
 use crate::memory::Memory;
 
 enum Flag {
@@ -10,7 +10,7 @@ enum Flag {
 
 #[derive(Debug)]
 pub enum Storage {
-    Register(Register),
+    Register(Register8),
     Pointer(Register16)
 }
 
@@ -20,7 +20,7 @@ pub enum Storage {
 pub enum Instruction {
     Adc(Storage),
     Bit(u8, Storage),
-    LdN(Register),
+    LdN(Register8),
     LdNN(Register16),
     NOP,
     Sla(Storage),
@@ -72,7 +72,7 @@ impl Cpu {
     // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: Instruction) -> u64 {
         match instruction {
-            LdN(r) => { let b = self.load_byte(); self.registers.set(r, b); 8 },
+            LdN(r) => { let b = self.load_byte(); self.registers.set8(r, b); 8 },
             LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); 12 },
             NOP => 4,
             _ => unimplemented!("{:?}", instruction),

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 #[derive(Debug)]
-pub enum Register {
+pub enum Register8 {
     A, B, C, D, E, F, H, L
 }
 
@@ -23,7 +23,7 @@ pub struct Registers {
     pub sp: u16,
 }
 
-use Register::*;
+use Register8::*;
 use Register16::*;
 
 impl Registers {
@@ -41,7 +41,7 @@ impl Registers {
         }
     }
 
-    pub fn set(&mut self, register: Register, value: u8) {
+    pub fn set8(&mut self, register: Register8, value: u8) {
         match register {
             A => self.a = value,
             B => self.b = value,
