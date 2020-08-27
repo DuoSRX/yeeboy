@@ -1,11 +1,11 @@
 #![allow(dead_code)]
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Register8 {
     A, B, C, D, E, F, H, L
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Register16 {
     AF, BC, DE, HL, SP
 }

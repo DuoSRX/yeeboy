@@ -8,7 +8,7 @@ enum Flag {
     C, // Carry
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Storage {
     Register(Register8),
     Pointer(Register16)
@@ -16,7 +16,7 @@ pub enum Storage {
 
 // use Storage::*;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Instruction {
     Adc(Storage),
     Bit(u8, Storage),
@@ -24,20 +24,40 @@ pub enum Instruction {
     LdNN(Register16),
     NOP,
     Sla(Storage),
+    NotImplemented,
+    Undefined,
 }
 
 use Instruction::*;
 
+// Array containing all the instructions indexed by opcode.
+// Tuple format: (Instruction, number of cycles, human readable string)
+// Does not include the CB instructions which will be stored in a different array.
+static OPCODES: [(Instruction, u32, &'static str); 0x10] = [
+    // 0x
+    (NOP,            4,  "NOP"),
+    (LdNN(BC),       12, "LD BC, nn"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdN(B),         8,  "LD B, n"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 1x
+    // TODO
+];
+
 pub fn decode(opcode: u8) -> Instruction {
-    match opcode {
-        0x00 => NOP,
-        0x01 => LdNN(BC),
-        0x06 => LdN(B),
-        // 0x87 => Adc(Register(B)),
-        // 0x20 => Sla(Register(B)),
-        // 0x46 => Bit(0, Pointer(HL)),
-        _ => NOP
-    }
+    // let (instruction, _cycles, _desc) = &OPCODES[opcode as usize];
+    OPCODES[opcode as usize].0
 }
 
 pub struct Cpu {
