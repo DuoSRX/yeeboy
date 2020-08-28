@@ -41,6 +41,19 @@ impl Registers {
         }
     }
 
+    pub fn get8(&self, register: Register8) -> u8 {
+        match register {
+            A => self.a,
+            B => self.b,
+            C => self.c,
+            D => self.d,
+            E => self.e,
+            F => self.f,
+            H => self.h,
+            L => self.l,
+        }
+    }
+
     pub fn set8(&mut self, register: Register8, value: u8) {
         match register {
             A => self.a = value,
@@ -52,6 +65,18 @@ impl Registers {
             H => self.h = value,
             L => self.l = value,
         }
+    }
+
+    pub fn get16(&self, register: Register16) -> u16 {
+        let (hi, lo) = match register {
+            AF => (self.a, self.f),
+            BC => (self.c, self.c),
+            DE => (self.e, self.e),
+            HL => (self.h, self.l),
+            SP => { return self.sp }
+        };
+
+        ((hi as u16) << 8) | (lo as u16)
     }
 
     pub fn set16(&mut self, register: Register16, value: u16) {

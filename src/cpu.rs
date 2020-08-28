@@ -20,6 +20,7 @@ pub enum Storage {
 pub enum Instruction {
     Adc(Storage),
     Bit(u8, Storage),
+    Inc(Register8),
     LdN(Register8),
     LdNN(Register16),
     NOP,
@@ -39,7 +40,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x10] = [
     (LdNN(BC),       12, "LD BC, nn"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Inc(B),         4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (LdN(B),         8,  "LD B, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -80,10 +81,28 @@ impl Cpu {
     // - Increment the cycle count
     pub fn step(&mut self) {
         let opcode = self.load_and_bump_pc();
-        let (instruction, cycles, _descr) = Self::decode(opcode);
-        // dbg!(descr);
+        let (instruction, cycles, descr) = Self::decode(opcode);
         self.execute(instruction);
         self.cycles += cycles;
+        println!("{}", self.trace(descr));
+    }
+
+    // Format the current state of the CPU, registers..etc
+    pub fn trace(&mut self, instruction: &'static str) -> String {
+        format!(
+            "AF:{:04X} BC:{:04X} DE:{:04X} HL:{:04X} SP:{:04X} [{}] {:04X}: {:02X} {:02X} {:02X}  {}",
+            self.registers.get16(AF),
+            self.registers.get16(BC),
+            self.registers.get16(DE),
+            self.registers.get16(HL),
+            self.registers.get16(SP),
+            "CHNZ", // TODO: Flags
+            self.pc,
+            self.memory.load(self.pc),
+            self.memory.load(self.pc + 1),
+            self.memory.load(self.pc + 2),
+            instruction,
+        )
     }
 
     pub fn decode(opcode: u8) -> (Instruction, u64, &'static str) {
@@ -94,6 +113,7 @@ impl Cpu {
     // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: Instruction)  {
         match instruction {
+            // Inc(r) => { let }
             LdN(r) => { let b = self.load_byte(); self.registers.set8(r, b); },
             LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); },
             NOP => {},
