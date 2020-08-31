@@ -14,6 +14,7 @@ pub enum Storage {
 pub enum Instruction {
     // Adc(Storage),
     // Bit(u8, Storage),
+    CpN,
     Dec(Register8),
     Di,
     Inc(Register8),
@@ -24,6 +25,7 @@ pub enum Instruction {
     LdN(Register8),
     LdNN(Register16),
     LdReadIoN,
+    LdRR(Register8, Register8),
     LdWriteIoN,
     NOP,
     // Sla(Storage),
@@ -108,14 +110,14 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (LdN(A),         8,  "LD A, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 4x
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdRR(B, B),     4,  "LD B, B"),
+    (LdRR(B, C),     4,  "LD B, C"),
+    (LdRR(B, D),     4,  "LD B, D"),
+    (LdRR(B, E),     4,  "LD B, E"),
+    (LdRR(B, H),     4,  "LD B, H"),
+    (LdRR(B, L),     4,  "LD B, L"),
+    (NotImplemented, 4,  "LD B, (HL)"),
+    (LdRR(B, A),     4,  "LD B, A"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -309,7 +311,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (CpN,            8,  "CP n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
 ];
 
@@ -377,6 +379,14 @@ impl Cpu {
     // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: Instruction)  {
         match instruction {
+            CpN => {
+                let a = self.registers.a;
+                let byte = self.load_and_bump_pc();
+                self.registers.flag(Flag::H, (byte & 0xF) > (a & 0xF));
+                self.registers.flag(Flag::N, true);
+                self.registers.flag(Flag::C, a < byte);
+                self.registers.flag(Flag::Z, a == byte);
+            },
             Dec(r) => {
                 let reg = self.registers.get(r);
                 let result = reg.wrapping_sub(1);
@@ -426,6 +436,9 @@ impl Cpu {
                 let n = self.load_and_bump_pc() as u16;
                 let byte = self.memory.load(n.wrapping_add(0xFF00));
                 self.registers.a = byte;
+            },
+            LdRR(r1, r2) => {
+                self.registers.set(r2, self.registers.get(r1))
             },
             LdWriteIoN => {
                 let n = self.load_and_bump_pc() as u16;
