@@ -35,14 +35,18 @@ impl Memory {
         }
     }
 
+    // Load word at address by loading two consecutive bytes in little endian
     pub fn load16(&mut self, address: u16) -> u16 {
-        u16::from_le_bytes([self.load(address), self.load(address + 1)])
+        let lo = self.load(address) as u16;
+        let hi = self.load(address + 1) as u16;
+        lo | (hi << 8)
     }
 
     pub fn store16(&mut self, address: u16, value: u16) {
-        let [lo, hi] = value.to_le_bytes();
-        self.store(address, lo);
-        self.store(address + 1, hi);
+        let lo = value & 0xFF;
+        let hi = (value & 0xFF00) >> 8;
+        self.store(address, lo as u8);
+        self.store(address + 1, hi as u8);
     }
 }
 
