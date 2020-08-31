@@ -5,7 +5,7 @@ pub const NEGATIVE_FLAG:        u8 = 0b0100_0000;
 pub const HALF_CARRY_FLAG: u8 = 0b0010_0000;
 pub const CARRY_FLAG:      u8 = 0b0001_0000;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Flag {
     Z, // Zero
     N, // Negative
