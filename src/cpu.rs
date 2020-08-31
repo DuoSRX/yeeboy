@@ -14,6 +14,7 @@ pub enum Instruction {
     // Adc(Storage),
     // Bit(u8, Storage),
     Inc(Register8),
+    Inc16(Register16),
     LdN(Register8),
     LdNN(Register16),
     NOP,
@@ -33,8 +34,8 @@ static OPCODES: [(Instruction, u64, &'static str); 0x10] = [
     (NOP,            4,  "NOP"),
     (LdNN(BC),       12, "LD BC, nn"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Inc(B),         4,  "NOT IMPLEMENTED YET"),
+    (Inc16(BC),      8,  "INC BC"),
+    (Inc(B),         4,  "INC B"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (LdN(B),         8,  "LD B, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -116,6 +117,10 @@ impl Cpu {
                 self.registers.flag(Flag::H, (result & 0xF) < (reg & 0xF));
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
+            },
+            Inc16(r) => {
+                let result = self.registers.get16(r).wrapping_add(1);
+                self.registers.set16(r, result);
             }
             NOP => {},
             NotImplemented => panic!("Reached unimplemented instruction: {:?} @ {:04X}", instruction, self.pc),

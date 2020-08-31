@@ -39,6 +39,28 @@ pub struct Registers {
 use Register8::*;
 use Register16::*;
 
+// trait RegisterIndex<T> {
+//     type Output;
+//     fn get1(&self, register: T) -> Self::Output;
+//     fn set1(&self, register: T, value: Self::Output);
+// }
+
+// impl RegisterIndex<Register8> for Registers {
+//     type Output = u8;
+//     fn get1(&self, _r: Register8) -> u8 { self.f }
+//     fn set1(&self, register: Register8, value: u8) { self.f = value }
+// }
+// impl RegisterIndex<Register16> for Registers {
+//     type Output = u16;
+//     fn get1(&self, _r: Register16) -> u16 { self.f as u16 }
+//     fn set1(&self, register: Register16, value: u16) { self.f = value as u8 }
+// }
+
+// fn foo(r: &Registers) {
+//     let a = r.get1(H);
+//     let b = r.get1(HL);
+// }
+
 impl Registers {
     pub fn new() -> Self {
         Self {
