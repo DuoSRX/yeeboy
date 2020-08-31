@@ -17,6 +17,7 @@ pub enum Instruction {
     Dec(Register8),
     Inc(Register8),
     Inc16(Register16),
+    Jp,
     LdN(Register8),
     LdNN(Register16),
     NOP,
@@ -31,7 +32,7 @@ use Instruction::*;
 // Tuple format: (Instruction, number of cycles, human readable string)
 // Does not include the CB instructions which will be stored in a different array.
 // Idea: what if instead of the enum, the first item as fn(&mut cpu) -> () ?
-static OPCODES: [(Instruction, u64, &'static str); 0x10] = [
+static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     // 0x
     (NOP,            4,  "NOP"),
     (LdNN(BC),       12, "LD BC, nn"),
@@ -50,7 +51,260 @@ static OPCODES: [(Instruction, u64, &'static str); 0x10] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 1x
-    // TODO
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 2x
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 3x
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 4x
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 5x
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 6x
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 7x
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 8x
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // 9x
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // Ax
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // Bx
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // Cx
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Jp,             16, "JP"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // Dx
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // Ex
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    // Fx
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
 ];
 
 pub struct Cpu {
@@ -77,16 +331,16 @@ impl Cpu {
     // - Execute the instruction
     // - Increment the cycle count
     pub fn step(&mut self) {
-        let opcode = self.load_and_bump_pc();
+        let opcode = self.load_byte();
         let (instruction, cycles, descr) = Self::decode(opcode);
+        println!("{}", self.trace(descr));
+        self.pc += 1;
         self.execute(instruction);
         self.cycles += cycles;
-        println!("{}", self.trace(descr));
     }
 
     // Format the current state of the CPU, registers..etc
     pub fn trace(&mut self, instruction: &'static str) -> String {
-        let pc = self.pc - 1;
         format!(
             "AF:{:04X} BC:{:04X} DE:{:04X} HL:{:04X} SP:{:04X} [{}] {:04X}: {:02X} {:02X} {:02X}  {}",
             self.registers.get16(AF),
@@ -95,10 +349,10 @@ impl Cpu {
             self.registers.get16(HL),
             self.registers.get16(SP),
             "CHNZ", // TODO: Flags
-            pc,
-            self.memory.load(pc),
-            self.memory.load(pc + 1),
-            self.memory.load(pc + 2),
+            self.pc,
+            self.memory.load(self.pc),
+            self.memory.load(self.pc + 1),
+            self.memory.load(self.pc + 2),
             instruction,
         )
     }
@@ -131,10 +385,14 @@ impl Cpu {
                 let result = self.registers.get16(r).wrapping_add(1);
                 self.registers.set16(r, result);
             }
+            Jp => { let dest = self.load_word(); self.pc = dest; },
             LdN(r) => { let b = self.load_byte(); self.registers.set(r, b); },
             LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); },
             NOP => {},
-            NotImplemented => panic!("Reached unimplemented instruction: {:?} @ {:04X}", instruction, self.pc),
+            NotImplemented => {
+                let opcode = self.memory.load(self.pc - 1);
+                panic!("Reached unimplemented instruction: Opcode {:02X} @ {:04X}", opcode, self.pc)
+            },
             Undefined => panic!("Executing undefined instruction at {:04X}", self.pc),
         }
     }
@@ -164,7 +422,7 @@ mod tests {
     use crate::register::Flag;
 
     fn make_cpu() -> Cpu {
-        let cart = Cartridge { rom: vec![] };
+        let cart = Cartridge { rom: vec![0; 0x2000] };
         Cpu::new(cart)
     }
 
@@ -225,6 +483,16 @@ mod tests {
         assert_eq!(cpu.registers.b, 0x13);
         assert!(!cpu.registers.has_flag(Flag::N));
         assert_eq!(cpu.cycles, 4);
+    }
+
+    #[test]
+    fn test_jp() {
+        let mut cpu = make_cpu();
+        cpu.memory.store(cpu.pc, 0xC3);
+        cpu.memory.store16(cpu.pc + 1, 0x1234);
+        cpu.step();
+        assert_eq!(cpu.pc, 0x1234);
+        assert_eq!(cpu.cycles, 16);
     }
 
     #[test]
