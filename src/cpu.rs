@@ -107,12 +107,12 @@ impl Cpu {
     // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: Instruction)  {
         match instruction {
-            LdN(r) => { let b = self.load_byte(); self.registers.set8(r, b); },
+            LdN(r) => { let b = self.load_byte(); self.registers.set(r, b); },
             LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); },
             Inc(r) => {
-                let reg = self.registers.get8(r);
+                let reg = self.registers.get(r);
                 let result = reg.wrapping_add(1);
-                self.registers.set8(r, result);
+                self.registers.set(r, result);
                 self.registers.flag(Flag::H, (result & 0xF) < (reg & 0xF));
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
@@ -201,7 +201,7 @@ mod tests {
         cpu.memory.store(cpu.pc, 0x04);
         cpu.step();
         assert_eq!(cpu.registers.b, 0x13);
-        assert!(cpu.registers.has_flag(Flag::N));
+        assert!(!cpu.registers.has_flag(Flag::N));
         assert_eq!(cpu.cycles, 4);
     }
 
