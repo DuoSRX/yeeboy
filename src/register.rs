@@ -105,8 +105,8 @@ impl Registers {
     pub fn get16(&self, register: Register16) -> u16 {
         let (hi, lo) = match register {
             AF => (self.a, self.f),
-            BC => (self.c, self.c),
-            DE => (self.e, self.e),
+            BC => (self.b, self.c),
+            DE => (self.d, self.e),
             HL => (self.h, self.l),
             SP => { return self.sp }
         };
@@ -120,8 +120,8 @@ impl Registers {
         match register {
             AF => { self.a = hi; self.f = lo }
             BC => { self.b = hi; self.c = lo }
-            DE => { self.b = hi; self.c = lo }
-            HL => { self.b = hi; self.c = lo }
+            DE => { self.d = hi; self.e = lo }
+            HL => { self.h = hi; self.l = lo }
             SP => self.sp = value
         }
     }

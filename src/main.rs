@@ -46,10 +46,10 @@ fn main() {
     dbg!(cartridge.rom.len());
 
     let mut cpu = Cpu::new(cartridge);
-    cpu.step();
-    cpu.step();
-    cpu.step();
-    cpu.step();
+
+    for _ in 0..1000000 {
+        cpu.step();
+    }
 
     // let mut cpu = Cpu::new(cartridge);
     // dbg!(cpu.registers.b);
