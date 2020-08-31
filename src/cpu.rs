@@ -18,10 +18,13 @@ pub enum Instruction {
     Inc(Register8),
     Inc16(Register16),
     Jp,
+    Jr(Flag, bool),
+    LddHlA,
     LdN(Register8),
     LdNN(Register16),
     NOP,
     // Sla(Storage),
+    Xor(Register8),
     NotImplemented,
     Undefined,
 }
@@ -48,7 +51,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdN(C),         8,  "LD C, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 1x
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -57,7 +60,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdN(D),         8,  "LD D, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -68,8 +71,8 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 2x
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Jr(Flag::Z, false), 8, "JR NZ, nn"),
+    (LdNN(HL),       12, "LD HL, nn"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -87,7 +90,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     // 3x
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LddHlA,         8,  "LDD (HL), A"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -219,7 +222,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Xor(A),         4,  "XOR A"),
     // Bx
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -341,6 +344,10 @@ impl Cpu {
 
     // Format the current state of the CPU, registers..etc
     pub fn trace(&mut self, instruction: &'static str) -> String {
+        let flags = vec![Flag::C, Flag::H, Flag::N, Flag::Z].iter().map(|&f|
+            if self.registers.has_flag(f) { format!("{:?}", f) } else { "-".into() }
+        ).collect::<Vec<String>>().join("");
+
         format!(
             "AF:{:04X} BC:{:04X} DE:{:04X} HL:{:04X} SP:{:04X} [{}] {:04X}: {:02X} {:02X} {:02X}  {}",
             self.registers.get16(AF),
@@ -348,7 +355,7 @@ impl Cpu {
             self.registers.get16(DE),
             self.registers.get16(HL),
             self.registers.get16(SP),
-            "CHNZ", // TODO: Flags
+            flags,
             self.pc,
             self.memory.load(self.pc),
             self.memory.load(self.pc + 1),
@@ -386,8 +393,40 @@ impl Cpu {
                 self.registers.set16(r, result);
             }
             Jp => { let dest = self.load_word(); self.pc = dest; },
-            LdN(r) => { let b = self.load_byte(); self.registers.set(r, b); },
-            LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); },
+            Jr(flag, cond) => {
+                let do_jump = self.registers.has_flag(flag) == cond;
+                if do_jump {
+                    let byte = self.load_byte();
+                    let offset = byte as i8 as u16;
+                    self.pc += offset + 1;
+                    self.cycles += 4;
+                } else {
+                    self.pc += 1;
+                }
+            },
+            LddHlA => {
+                let address = self.registers.get16(HL);
+                self.memory.store(address, self.registers.a);
+                self.registers.set16(HL, address.wrapping_sub(1));
+            },
+            LdN(r) => {
+                let b = self.load_byte();
+                self.registers.set(r, b);
+                self.pc += 1;
+            },
+            LdNN(r) => {
+                let w = self.load_word();
+                self.registers.set16(r, w);
+                self.pc += 2;
+            },
+            Xor(r) => {
+                let result = self.registers.a ^ self.registers.get(r);
+                self.registers.a = result;
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, false);
+            },
             NOP => {},
             NotImplemented => {
                 let opcode = self.memory.load(self.pc - 1);
@@ -459,6 +498,7 @@ mod tests {
         cpu.step();
         assert_eq!(cpu.registers.b, 0x42);
         assert_eq!(cpu.cycles, 8);
+        assert_eq!(cpu.pc, 0x102);
     }
 
     #[test]
@@ -471,6 +511,7 @@ mod tests {
         assert_eq!(cpu.registers.b, 0x12);
         assert_eq!(cpu.registers.c, 0x34);
         assert_eq!(cpu.cycles, 12);
+        assert_eq!(cpu.pc, 0x103);
     }
 
     #[test]
