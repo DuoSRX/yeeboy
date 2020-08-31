@@ -1,5 +1,18 @@
 #![allow(dead_code)]
 
+pub const ZERO_FLAG:       u8 = 0b1000_0000;
+pub const NEGATIVE_FLAG:        u8 = 0b0100_0000;
+pub const HALF_CARRY_FLAG: u8 = 0b0010_0000;
+pub const CARRY_FLAG:      u8 = 0b0001_0000;
+
+#[derive(Debug)]
+pub enum Flag {
+    Z, // Zero
+    N, // Negative
+    H, // Half-carry
+    C, // Carry
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum Register8 {
     A, B, C, D, E, F, H, L
@@ -88,6 +101,41 @@ impl Registers {
             DE => { self.b = hi; self.c = lo }
             HL => { self.b = hi; self.c = lo }
             SP => self.sp = value
+        }
+    }
+
+    pub fn flag(&mut self, flag: Flag, cond: bool) {
+        if cond {
+            self.set_flag(flag);
+        } else {
+            self.unset_flag(flag);
+        }
+    }
+
+    pub fn has_flag(&mut self, flag: Flag) -> bool {
+        match flag {
+            Flag::Z => self.f & ZERO_FLAG > 0,
+            Flag::N => self.f & NEGATIVE_FLAG > 0,
+            Flag::H => self.f & HALF_CARRY_FLAG > 0,
+            Flag::C => self.f & CARRY_FLAG > 0,
+        }
+    }
+
+    fn set_flag(&mut self, flag: Flag) {
+        match flag {
+            Flag::Z => self.f |= ZERO_FLAG,
+            Flag::N => self.f |= NEGATIVE_FLAG,
+            Flag::H => self.f |= HALF_CARRY_FLAG,
+            Flag::C => self.f |= CARRY_FLAG,
+        }
+    }
+
+    fn unset_flag(&mut self, flag: Flag) {
+        match flag {
+            Flag::Z => self.f &= !ZERO_FLAG & 0xFF,
+            Flag::N => self.f &= !NEGATIVE_FLAG & 0xFF,
+            Flag::H => self.f &= !HALF_CARRY_FLAG & 0xFF,
+            Flag::C => self.f &= !CARRY_FLAG & 0xFF,
         }
     }
 }

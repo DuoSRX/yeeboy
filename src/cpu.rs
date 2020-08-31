@@ -1,12 +1,5 @@
-use crate::register::{Registers, Register8, Register16, Register8::*, Register16::*};
+use crate::register::{Flag, Registers, Register8, Register16, Register8::*, Register16::*};
 use crate::memory::Memory;
-
-enum Flag {
-    Z, // Zero
-    N, // Negative
-    H, // Half-carry
-    C, // Carry
-}
 
 #[derive(Clone, Copy, Debug)]
 pub enum Storage {
@@ -18,13 +11,13 @@ pub enum Storage {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Instruction {
-    Adc(Storage),
-    Bit(u8, Storage),
+    // Adc(Storage),
+    // Bit(u8, Storage),
     Inc(Register8),
     LdN(Register8),
     LdNN(Register16),
     NOP,
-    Sla(Storage),
+    // Sla(Storage),
     NotImplemented,
     Undefined,
 }
@@ -34,6 +27,7 @@ use Instruction::*;
 // Array containing all the instructions indexed by opcode.
 // Tuple format: (Instruction, number of cycles, human readable string)
 // Does not include the CB instructions which will be stored in a different array.
+// Idea: what if instead of the enum, the first item as fn(&mut cpu) -> () ?
 static OPCODES: [(Instruction, u64, &'static str); 0x10] = [
     // 0x
     (NOP,            4,  "NOP"),
@@ -113,11 +107,19 @@ impl Cpu {
     // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: Instruction)  {
         match instruction {
-            // Inc(r) => { let }
             LdN(r) => { let b = self.load_byte(); self.registers.set8(r, b); },
             LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); },
+            Inc(r) => {
+                let reg = self.registers.get8(r);
+                let result = reg.wrapping_add(1);
+                self.registers.set8(r, result);
+                self.registers.flag(Flag::H, (result & 0xF) < (reg & 0xF));
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+            }
             NOP => {},
-            _ => unimplemented!("{:?}", instruction),
+            NotImplemented => panic!("Reached unimplemented instruction: {:?} @ {:04X}", instruction, self.pc),
+            Undefined => panic!("Executing undefined instruction at {:04X}", self.pc),
         }
     }
 
@@ -142,6 +144,7 @@ impl Cpu {
 #[cfg(test)]
 mod tests {
     use crate::cpu::Cpu;
+    use crate::register::Flag;
 
     #[test]
     fn test_load_byte() {
@@ -191,11 +194,22 @@ mod tests {
     }
 
     #[test]
+    fn test_inc() {
+        let mut cpu = Cpu::new();
+        cpu.registers.b = 0x12;
+        cpu.registers.flag(Flag::N, true);
+        cpu.memory.store(cpu.pc, 0x04);
+        cpu.step();
+        assert_eq!(cpu.registers.b, 0x13);
+        assert!(cpu.registers.has_flag(Flag::N));
+        assert_eq!(cpu.cycles, 4);
+    }
+
+    #[test]
     fn test_nop() {
         let mut cpu = Cpu::new();
         cpu.memory.store(cpu.pc, 0x00);
         cpu.step();
         assert_eq!(cpu.cycles, 4);
     }
-
 }
