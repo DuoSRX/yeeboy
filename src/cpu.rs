@@ -13,6 +13,7 @@ pub enum Storage {
 pub enum Instruction {
     // Adc(Storage),
     // Bit(u8, Storage),
+    Dec(Register8),
     Inc(Register8),
     Inc16(Register16),
     LdN(Register8),
@@ -36,7 +37,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x10] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Inc16(BC),      8,  "INC BC"),
     (Inc(B),         4,  "INC B"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Dec(B),         4,  "DEC B"),
     (LdN(B),         8,  "LD B, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -108,8 +109,14 @@ impl Cpu {
     // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: Instruction)  {
         match instruction {
-            LdN(r) => { let b = self.load_byte(); self.registers.set(r, b); },
-            LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); },
+            Dec(r) => {
+                let reg = self.registers.get(r);
+                let result = reg.wrapping_sub(1);
+                self.registers.set(r, result);
+                self.registers.flag(Flag::H, (result & 0xF) > (reg & 0xF));
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, true);
+            },
             Inc(r) => {
                 let reg = self.registers.get(r);
                 let result = reg.wrapping_add(1);
@@ -122,6 +129,8 @@ impl Cpu {
                 let result = self.registers.get16(r).wrapping_add(1);
                 self.registers.set16(r, result);
             }
+            LdN(r) => { let b = self.load_byte(); self.registers.set(r, b); },
+            LdNN(r) => { let w = self.load_word(); self.registers.set16(r, w); },
             NOP => {},
             NotImplemented => panic!("Reached unimplemented instruction: {:?} @ {:04X}", instruction, self.pc),
             Undefined => panic!("Executing undefined instruction at {:04X}", self.pc),
