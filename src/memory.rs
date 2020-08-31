@@ -9,26 +9,30 @@ pub struct Memory  {
 }
 
 impl Memory {
-    pub fn new() -> Self {
+    pub fn new(cartridge: Cartridge) -> Self {
         let gpu = Gpu::new();
         Self {
-            cartridge: Cartridge { rom: vec![] },
             work_ram: vec![0; 0x2000], // 8 kB of RAM
             high_ram: vec![0; 0x7F],   // Mapped from 0xFF80 to 0xFFF
             gpu,
+            cartridge,
         }
     }
 
     pub fn load(&mut self, address: u16) -> u8 {
-        // match address {
-        //     // 0x0000...0x7FFF => rom TODO
-        //     0xC000
-        // }
-        self.work_ram[address as usize]
+        match address {
+            0x0000..=0x7FFF => self.cartridge.rom[address as usize],
+            0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize],
+            _ => 0
+        }
     }
 
     pub fn store(&mut self, address: u16, value: u8) {
-        self.work_ram[address as usize] = value;
+        match address {
+            0x0000..=0x7FFF => self.cartridge.rom[address as usize] = value,
+            0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize] = value,
+            _ => {}
+        }
     }
 
     // Load word at address by loading two consecutive bytes in little endian
