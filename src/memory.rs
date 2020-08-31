@@ -5,6 +5,7 @@ pub struct Memory  {
     cartridge: Cartridge, // TODO: Replace with MBC
     work_ram: Vec<u8>,
     high_ram: Vec<u8>,
+    io: Vec<u8>,
     gpu: Gpu,
 }
 
@@ -13,7 +14,8 @@ impl Memory {
         let gpu = Gpu::new();
         Self {
             work_ram: vec![0; 0x2000], // 8 kB of RAM
-            high_ram: vec![0; 0x7F],   // Mapped from 0xFF80 to 0xFFF
+            high_ram: vec![0; 0x80],   // Mapped from 0xFF80 to 0xFFF
+            io: vec![0; 0x80],
             gpu,
             cartridge,
         }
@@ -23,7 +25,9 @@ impl Memory {
         match address {
             0x0000..=0x7FFF => self.cartridge.rom[address as usize],
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize],
-            _ => 0
+            0xFF00..=0xFF7F => self.io[address as usize - 0xFF00],
+            0xFF80..=0xFFFF => self.io[address as usize - 0xFF80],
+            _ => unimplemented!()
         }
     }
 
@@ -31,7 +35,9 @@ impl Memory {
         match address {
             0x0000..=0x7FFF => self.cartridge.rom[address as usize] = value,
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize] = value,
-            _ => {}
+            0xFF00..=0xFF7F => self.io[address as usize - 0xFF00] = value,
+            0xFF80..=0xFFFF => self.io[address as usize - 0xFF80] = value,
+            _ => unimplemented!()
         }
     }
 

@@ -15,6 +15,7 @@ pub enum Instruction {
     // Adc(Storage),
     // Bit(u8, Storage),
     Dec(Register8),
+    Di,
     Inc(Register8),
     Inc16(Register16),
     Jp,
@@ -22,6 +23,8 @@ pub enum Instruction {
     LddHlA,
     LdN(Register8),
     LdNN(Register16),
+    LdReadIoN,
+    LdWriteIoN,
     NOP,
     // Sla(Storage),
     Xor(Register8),
@@ -50,7 +53,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Dec(C),         4,  "DEC C"),
     (LdN(C),         8,  "LD C, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 1x
@@ -102,7 +105,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdN(A),         8,  "LD A, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 4x
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -275,7 +278,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // Ex
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdWriteIoN,     12, "LDH (FF00+n), A"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -292,10 +295,10 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // Fx
+    (LdReadIoN,      12, "LDH A, (FF00+n)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Di,             4,  "DI"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -315,6 +318,7 @@ pub struct Cpu {
     pub registers: Registers,
     pub memory: Memory,
     pub cycles: u64,
+    pub ime: bool,
 }
 
 impl Cpu {
@@ -324,6 +328,7 @@ impl Cpu {
             registers: Registers::new(),
             pc: 0x100,
             cycles: 0,
+            ime: true,
             memory,
         }
     }
@@ -380,6 +385,7 @@ impl Cpu {
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, true);
             },
+            Di => self.ime = false,
             Inc(r) => {
                 let reg = self.registers.get(r);
                 let result = reg.wrapping_add(1);
@@ -396,9 +402,8 @@ impl Cpu {
             Jr(flag, cond) => {
                 let do_jump = self.registers.has_flag(flag) == cond;
                 if do_jump {
-                    let byte = self.load_byte();
-                    let offset = byte as i8 as u16;
-                    self.pc += offset + 1;
+                    let offset = self.load_byte() as i8;
+                    self.pc = (self.pc as i16 + offset as i16) as u16;
                     self.cycles += 4;
                 } else {
                     self.pc += 1;
@@ -410,14 +415,22 @@ impl Cpu {
                 self.registers.set16(HL, address.wrapping_sub(1));
             },
             LdN(r) => {
-                let b = self.load_byte();
+                let b = self.load_and_bump_pc();
                 self.registers.set(r, b);
-                self.pc += 1;
             },
             LdNN(r) => {
-                let w = self.load_word();
+                let w = self.load_word_and_bump_pc();
                 self.registers.set16(r, w);
-                self.pc += 2;
+            },
+            LdReadIoN => {
+                let n = self.load_and_bump_pc() as u16;
+                let byte = self.memory.load(n.wrapping_add(0xFF00));
+                self.registers.a = byte;
+            },
+            LdWriteIoN => {
+                let n = self.load_and_bump_pc() as u16;
+                let address = n.wrapping_add(0xFF00);
+                self.memory.store(address, self.registers.a);
             },
             Xor(r) => {
                 let result = self.registers.a ^ self.registers.get(r);
@@ -451,6 +464,12 @@ impl Cpu {
         let byte = self.load_byte();
         self.pc += 1;
         byte
+    }
+
+    fn load_word_and_bump_pc(&mut self) -> u16 {
+        let word = self.load_word();
+        self.pc += 2;
+        word
     }
 }
 
@@ -523,6 +542,18 @@ mod tests {
         cpu.step();
         assert_eq!(cpu.registers.b, 0x13);
         assert!(!cpu.registers.has_flag(Flag::N));
+        assert_eq!(cpu.cycles, 4);
+    }
+
+    #[test]
+    fn test_dec() {
+        let mut cpu = make_cpu();
+        cpu.registers.b = 0x12;
+        cpu.registers.flag(Flag::N, false);
+        cpu.memory.store(cpu.pc, 0x05);
+        cpu.step();
+        assert_eq!(cpu.registers.b, 0x11);
+        assert!(cpu.registers.has_flag(Flag::N));
         assert_eq!(cpu.cycles, 4);
     }
 
