@@ -1,5 +1,6 @@
-use crate::register::{Flag, Registers, Register8, Register16, Register8::*, Register16::*};
+use crate::cartridge::Cartridge;
 use crate::memory::Memory;
+use crate::register::{Flag, Registers, Register8, Register16, Register8::*, Register16::*};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Storage {
@@ -60,8 +61,8 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new() -> Self {
-        let memory = Memory::new();
+    pub fn new(cartridge: Cartridge) -> Self {
+        let memory = Memory::new(cartridge);
         Self {
             registers: Registers::new(),
             pc: 0x100,
@@ -85,6 +86,7 @@ impl Cpu {
 
     // Format the current state of the CPU, registers..etc
     pub fn trace(&mut self, instruction: &'static str) -> String {
+        let pc = self.pc - 1;
         format!(
             "AF:{:04X} BC:{:04X} DE:{:04X} HL:{:04X} SP:{:04X} [{}] {:04X}: {:02X} {:02X} {:02X}  {}",
             self.registers.get16(AF),
@@ -93,10 +95,10 @@ impl Cpu {
             self.registers.get16(HL),
             self.registers.get16(SP),
             "CHNZ", // TODO: Flags
-            self.pc,
-            self.memory.load(self.pc),
-            self.memory.load(self.pc + 1),
-            self.memory.load(self.pc + 2),
+            pc,
+            self.memory.load(pc),
+            self.memory.load(pc + 1),
+            self.memory.load(pc + 2),
             instruction,
         )
     }
@@ -158,18 +160,24 @@ impl Cpu {
 #[cfg(test)]
 mod tests {
     use crate::cpu::Cpu;
+    use crate::cartridge::Cartridge;
     use crate::register::Flag;
+
+    fn make_cpu() -> Cpu {
+        let cart = Cartridge { rom: vec![] };
+        Cpu::new(cart)
+    }
 
     #[test]
     fn test_load_byte() {
-        let mut cpu = Cpu::new();
+        let mut cpu = make_cpu();
         cpu.memory.store(cpu.pc, 0x42);
         assert_eq!(cpu.load_byte(), 0x42);
     }
 
     #[test]
     fn test_load_word() {
-        let mut cpu = Cpu::new();
+        let mut cpu = make_cpu();
         cpu.memory.store(cpu.pc, 0x42);
         cpu.memory.store(cpu.pc + 1, 0x12);
         assert_eq!(cpu.load_word(), 0x1242);
@@ -178,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_load_and_bump_pc() {
-        let mut cpu = Cpu::new();
+        let mut cpu = make_cpu();
         cpu.pc = 0x1234;
         cpu.memory.store(cpu.pc, 0x42);
         assert_eq!(cpu.load_and_bump_pc(), 0x42);
@@ -187,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_ld_n() {
-        let mut cpu = Cpu::new();
+        let mut cpu = make_cpu();
         cpu.memory.store(cpu.pc, 0x06);
         cpu.memory.store(cpu.pc + 1, 0x42);
         cpu.step();
@@ -197,7 +205,7 @@ mod tests {
 
     #[test]
     fn test_ld_nn() {
-        let mut cpu = Cpu::new();
+        let mut cpu = make_cpu();
         cpu.memory.store(cpu.pc, 0x01);
         cpu.memory.store(cpu.pc + 1, 0x34);
         cpu.memory.store(cpu.pc + 2, 0x12);
@@ -209,7 +217,7 @@ mod tests {
 
     #[test]
     fn test_inc() {
-        let mut cpu = Cpu::new();
+        let mut cpu = make_cpu();
         cpu.registers.b = 0x12;
         cpu.registers.flag(Flag::N, true);
         cpu.memory.store(cpu.pc, 0x04);
@@ -221,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_nop() {
-        let mut cpu = Cpu::new();
+        let mut cpu = make_cpu();
         cpu.memory.store(cpu.pc, 0x00);
         cpu.step();
         assert_eq!(cpu.cycles, 4);
