@@ -6,6 +6,7 @@ pub struct Memory  {
     work_ram: Vec<u8>,
     high_ram: Vec<u8>,
     io: Vec<u8>,
+    serial: Vec<char>, // for debugging only
     gpu: Gpu,
 }
 
@@ -16,6 +17,7 @@ impl Memory {
             work_ram: vec![0; 0x2000], // 8 kB of RAM
             high_ram: vec![0; 0x80],   // Mapped from 0xFF80 to 0xFFF
             io: vec![0; 0x80],
+            serial: vec![],
             gpu,
             cartridge,
         }
@@ -24,20 +26,32 @@ impl Memory {
     pub fn load(&mut self, address: u16) -> u8 {
         match address {
             0x0000..=0x7FFF => self.cartridge.rom[address as usize],
+            0x8000..=0x9FFF => 0, // TODO: vram
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize],
+            0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],
+            0xFE00..=0xFE9F => 0, // TODO: OAM
+            0xFEA0..=0xFEFF => 0, // No-op
             0xFF00..=0xFF7F => self.io[address as usize - 0xFF00],
-            0xFF80..=0xFFFF => self.io[address as usize - 0xFF80],
-            _ => unimplemented!()
+            0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80],
+            _ => unimplemented!("Loading {:04X}", address),
         }
     }
 
     pub fn store(&mut self, address: u16, value: u8) {
+        if address == 0xFF01 {
+            unsafe { self.serial.push(std::char::from_u32_unchecked(value as u32)) }
+            return
+        }
         match address {
-            0x0000..=0x7FFF => self.cartridge.rom[address as usize] = value,
+            // 0x0000..=0x7FFF => self.cartridge.rom[address as usize] = value,
+            0x8000..=0x9FFF => {}, // TODO: vram
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize] = value,
+            0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
+            0xFE00..=0xFE9F => {} // TODO: OAM
+            0xFEA0..=0xFEFF => {} // No-op
             0xFF00..=0xFF7F => self.io[address as usize - 0xFF00] = value,
-            0xFF80..=0xFFFF => self.io[address as usize - 0xFF80] = value,
-            _ => unimplemented!()
+            0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80] = value,
+            _ => unimplemented!("Storing {:02X} @ {:04X}", value, address),
         }
     }
 

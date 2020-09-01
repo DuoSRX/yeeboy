@@ -41,7 +41,8 @@ struct Console {
 // }
 
 fn main() {
-    let mut file = File::open("roms/tetris.gb").unwrap();
+    // let mut file = File::open("roms/tetris.gb").unwrap();
+    let mut file = File::open("roms/06-ld_r_r.gb").unwrap();
     let cartridge = Cartridge::load(&mut file);
     dbg!(cartridge.rom.len());
 
@@ -50,11 +51,4 @@ fn main() {
     for _ in 0..1000000 {
         cpu.step();
     }
-
-    // let mut cpu = Cpu::new(cartridge);
-    // dbg!(cpu.registers.b);
-    // cpu.memory.store(cpu.pc, 0x06);
-    // cpu.memory.store(cpu.pc + 1, 0x10);
-    // cpu.step();
-    // dbg!(cpu.registers.b);
 }
