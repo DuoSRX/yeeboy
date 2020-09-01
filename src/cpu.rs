@@ -35,6 +35,7 @@ pub enum Instruction {
     LdSp,
     LdWriteIoN,
     NOP,
+    Or(Register8),
     Pop16(Register16),
     Push16(Register16),
     Ret,
@@ -94,7 +95,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Jr(Flag::Z, true), 8, "JR Z, nn"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (LdiAHl,         8,  "LDI A, (HL)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -239,14 +240,14 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Xor(A),         4,  "XOR A"),
     // Bx
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Or(B),          4,  "OR B"),
+    (Or(C),          4,  "OR B"),
+    (Or(D),          4,  "OR B"),
+    (Or(E),          4,  "OR B"),
+    (Or(H),          4,  "OR B"),
+    (Or(L),          4,  "OR B"),
+    (NotImplemented, 4,  "OR (HL)"),
+    (Or(A),          4,  "OR B"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -257,7 +258,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // Cx
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Pop16(BC),     12,  "POP BC"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Jp,             16, "JP"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -381,14 +382,14 @@ impl Cpu {
         )
     }
 
-    pub fn decode(opcode: u8) -> (Instruction, u64, &'static str) {
+    pub fn decode(opcode: u8) -> &'static (Instruction, u64, &'static str) {
         // TODO: CB opcodes
-        OPCODES[opcode as usize]
+        OPCODES.get(opcode as usize).unwrap()
     }
 
     // Execute an instruction and returns the number of cycles taken
-    pub fn execute(&mut self, instruction: Instruction)  {
-        match instruction {
+    pub fn execute(&mut self, instruction: &Instruction)  {
+        match *instruction {
             Call => {
                 let address = self.load_word();
                 let sp = self.registers.sp.wrapping_sub(2);
@@ -484,6 +485,14 @@ impl Cpu {
                 let n = self.load_and_bump_pc() as u16;
                 let address = n.wrapping_add(0xFF00);
                 self.memory.store(address, self.registers.a);
+            },
+            Or(r) => {
+                let value = self.registers.a | self.registers.get(r);
+                self.registers.a = value;
+                self.registers.flag(Flag::C, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::Z, value == 0);
             },
             Pop16(AF) => {
                 let af = self.memory.load16(self.registers.sp) & 0xFFF0;
