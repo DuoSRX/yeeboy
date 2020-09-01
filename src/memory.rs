@@ -6,7 +6,7 @@ pub struct Memory  {
     work_ram: Vec<u8>,
     high_ram: Vec<u8>,
     io: Vec<u8>,
-    serial: Vec<char>, // for debugging only
+    pub serial: Vec<char>, // for debugging only
     gpu: Gpu,
 }
 
@@ -40,6 +40,7 @@ impl Memory {
     pub fn store(&mut self, address: u16, value: u8) {
         if address == 0xFF01 {
             unsafe { self.serial.push(std::char::from_u32_unchecked(value as u32)) }
+            // unsafe { dbg!(std::char::from_u32_unchecked(value as u32)) };
             return
         }
         match address {

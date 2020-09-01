@@ -49,7 +49,12 @@ fn main() {
 
     let mut cpu = Cpu::new(cartridge);
 
-    for _ in 0..1000000 {
-        cpu.step();
+    while cpu.pc != 0xCC5F {
+        cpu.step()
     }
+    // for _ in 0..1000000 {
+    //     cpu.step();
+    // }
+
+    println!("{}", cpu.memory.serial.iter().collect::<String>());
 }

@@ -30,6 +30,7 @@ pub enum Instruction {
     Adc(Storage),
     // Bit(u8, Storage),
     AddD8,
+    AddHlR16(Register16),
     AndD8,
     Call,
     CallCond(Flag, bool),
@@ -39,6 +40,7 @@ pub enum Instruction {
     Inc(Register8),
     Inc16(Register16),
     Jp,
+    JpHl,
     Jr(Flag, bool),
     JrE8,
     Lda16A,
@@ -66,6 +68,7 @@ pub enum Instruction {
     Rra, // RRA is the same as RR but has a different flag behaviour
     Srl(Register8),
     SubD8,
+    Swap(Storage),
     // Sla(Storage),
     Xor(Register8),
     XorD8,
@@ -177,6 +180,16 @@ impl Cpu {
                 self.registers.flag(Flag::C, false);
                 self.registers.flag(Flag::Z, value == 0);
             },
+            AddHlR16(r) => {
+                let hl = self.registers.get16(HL) as u32;
+                let a = self.registers.get16(r) as u32;
+                let result = hl + a;
+                let h = (hl & 0xFFF) + (a & 0xFFF) > 0xFFF;
+                self.registers.set16(r, (result & 0xFFFF) as u16);
+                self.registers.flag(Flag::H, h);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::C, result > 0xFFFF);
+            },
             Call => {
                 self.do_call();
             },
@@ -216,7 +229,12 @@ impl Cpu {
                 let result = self.registers.get16(r).wrapping_add(1);
                 self.registers.set16(r, result);
             }
-            Jp => { let dest = self.load_word(); self.pc = dest; },
+            Jp => {
+                self.pc = self.load_word();
+            },
+            JpHl => {
+                self.pc = self.registers.get16(HL);
+            },
             Jr(flag, cond) => {
                 let offset = self.load_and_bump_pc() as i8;
                 if self.registers.has_flag(flag) == cond {
@@ -370,6 +388,9 @@ impl Cpu {
                 self.registers.flag(Flag::C, value > a);
                 self.registers.flag(Flag::Z, a == b);
             },
+            Swap(s) => {
+                self.do_swap(s);
+            }
             Xor(r) => {
                 let result = self.registers.a ^ self.registers.get(r);
                 self.registers.a = result;
@@ -479,6 +500,18 @@ impl Cpu {
         self.registers.flag(Flag::H, false);
         self.registers.flag(Flag::N, false);
         self.registers.flag(Flag::Z, value == 0);
+    }
+
+    fn do_swap(&mut self, s: Storage) {
+        let a = self.load(s);
+        let lo = (a & 0x0F) << 4;
+        let hi = (a & 0xF0) >> 4;
+        let result = lo | hi;
+        self.store(s, result);
+        self.registers.flag(Flag::C, false);
+        self.registers.flag(Flag::H, false);
+        self.registers.flag(Flag::N, false);
+        self.registers.flag(Flag::Z, result == 0);
     }
 }
 
