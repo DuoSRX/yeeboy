@@ -1,6 +1,7 @@
 use crate::cartridge::Cartridge;
 use crate::memory::Memory;
-use crate::register::{Flag, Registers, Register8, Register16, Register8::*, Register16::*};
+use crate::opcodes::*;
+use crate::register::{Flag, Registers, Register8, Register16, Register16::*};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Storage {
@@ -46,6 +47,8 @@ pub enum Instruction {
     Pop16(Register16),
     Push16(Register16),
     Ret,
+    Rr(Storage),
+    Srl(Register8),
     SubD8,
     // Sla(Storage),
     Xor(Register8),
@@ -55,285 +58,6 @@ pub enum Instruction {
 }
 
 use Instruction::*;
-
-// Array containing all the instructions indexed by opcode.
-// Tuple format: (Instruction, number of cycles, human readable string)
-// Does not include the CB instructions which will be stored in a different array.
-// Idea: what if instead of the enum, the first item as fn(&mut cpu) -> () ?
-static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
-    // 0x
-    (NOP,            4,  "NOP"),
-    (LdNN(BC),       12, "LD BC, nn"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Inc16(BC),      8,  "INC BC"),
-    (Inc(B),         4,  "INC B"),
-    (Dec(B),         4,  "DEC B"),
-    (LdN(B),         8,  "LD B, n"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdAR16(BC),     8,  "LD A, [BC]"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Inc(C),         4,  "INC C"),
-    (Dec(C),         4,  "DEC C"),
-    (LdN(C),         8,  "LD C, n"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // 1x
-    (NotImplemented, 4,  "STOP"),
-    (LdNN(DE),       12, "LD DE, nn"),
-    (LdR16A(DE),     8, "LD [DE], A"),
-    (Inc16(DE),      8,  "INC DE"),
-    (Inc(D),         4,  "INC D"),
-    (Dec(D),         4,  "DEC D"),
-    (LdN(D),         8,  "LD D, n"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (JrE8,          12,  "JR e8"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdAR16(DE),     8,  "LD A, [DE]"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Inc(E),         4,  "INC E"),
-    (Dec(E),         4,  "DEC E"),
-    (LdN(E),         8,  "LD E, n"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // 2x
-    (Jr(Flag::Z, false), 8, "JR NZ, nn"),
-    (LdNN(HL),       12, "LD HL, nn"),
-    (LdiHlA,         8,  "LDI (HL), A"),
-    (Inc16(HL),      8,  "INC HL"),
-    (Inc(H),         4,  "INC H"),
-    (Dec(H),         4,  "DEC H"),
-    (LdN(H),         8,  "LD H, n"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Jr(Flag::Z, true), 8, "JR Z, nn"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdiAHl,         8,  "LDI A, (HL)"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Inc(L),         4,  "INC L"),
-    (Dec(L),         4,  "DEC L"),
-    (LdN(L),         8,  "LD L, n"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // 3x
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdSp,          12,  "LD SP, nn"),
-    (LddHlA,         8,  "LDD (HL), A"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Inc16(SP),      8,  "INC SP"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdN(A),         8,  "LD A, n"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // 4x
-    (LdRR(B, B),     4,  "LD B, B"),
-    (LdRR(B, C),     4,  "LD B, C"),
-    (LdRR(B, D),     4,  "LD B, D"),
-    (LdRR(B, E),     4,  "LD B, E"),
-    (LdRR(B, H),     4,  "LD B, H"),
-    (LdRR(B, L),     4,  "LD B, L"),
-    (LdRHl(B),       8,  "LD B, (HL)"),
-    (LdRR(B, A),     4,  "LD B, A"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdRHl(C),       8,  "LD C, (HL)"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // 5x
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdRHl(D),       8,  "LD D, (HL)"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdRHl(E),       8,  "LD E, (HL)"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // 6x
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdRHl(H),       8,  "LD H, (HL)"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdRHl(L),       8,  "LD L, (HL)"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // 7x
-    (LdHlR(B),       8,  "LD (HL), B"),
-    (LdHlR(C),       8,  "LD (HL), C"),
-    (LdHlR(D),       8,  "LD (HL), D"),
-    (LdHlR(E),       8,  "LD (HL), E"),
-    (LdHlR(H),       8,  "LD (HL), H"),
-    (LdHlR(L),       8,  "LD (HL), L"),
-    (NotImplemented, 4,  "HALT"),
-    (LdHlR(A),       8,  "LD (HL), A"),
-    (LdRR(A, B),     4,  "LD A, B"),
-    (LdRR(A, C),     4,  "LD A, C"),
-    (LdRR(A, D),     4,  "LD A, D"),
-    (LdRR(A, E),     4,  "LD A, E"),
-    (LdRR(A, H),     4,  "LD A, H"),
-    (LdRR(A, L),     4,  "LD A, L"),
-    (LdRHl(A),       8,  "LD A, (HL)"),
-    (LdRR(A, A),     4,  "LD A, A"),
-    // 8x
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // 9x
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // Ax
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Xor(B),         4,  "XOR B"),
-    (Xor(C),         4,  "XOR C"),
-    (Xor(D),         4,  "XOR D"),
-    (Xor(E),         4,  "XOR E"),
-    (Xor(H),         4,  "XOR H"),
-    (Xor(L),         4,  "XOR L"),
-    (XorHl,          8,  "XOR A, (HL)"),
-    (Xor(A),         4,  "XOR A"),
-    // Bx
-    (Or(B),          4,  "OR B"),
-    (Or(C),          4,  "OR B"),
-    (Or(D),          4,  "OR B"),
-    (Or(E),          4,  "OR B"),
-    (Or(H),          4,  "OR B"),
-    (Or(L),          4,  "OR B"),
-    (NotImplemented, 4,  "OR (HL)"),
-    (Or(A),          4,  "OR B"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // Cx
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Pop16(BC),     12,  "POP BC"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Jp,             16, "JP"),
-    (CallCond(Flag::Z, false), 4,  "CALL NZ, d16"),
-    (Push16(BC),    16,  "PUSH BC"),
-    (AddD8,          8,  "ADD d8"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Ret,           16,  "RET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (CallCond(Flag::Z, true), 4,  "CALL Z, d16"),
-    (Call,          24,  "CALL d16"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // Dx
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Pop16(DE),     12,  "POP DE"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (CallCond(Flag::C, false), 4,  "CALL NC, d16"),
-    (Push16(DE),    16,  "PUSH DE"),
-    (SubD8,          8,  "SUB d8"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (CallCond(Flag::C, true), 4,  "CALL C, d16"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // Ex
-    (LdWriteIoN,    12,  "LDH (FF00+n), A"),
-    (Pop16(HL),     12,  "POP HL"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Push16(HL),    16,  "PUSH HL"),
-    (AndD8,          4,  "AND d8"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Lda16A,        16,  "LD (a16), A"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    // Fx
-    (LdReadIoN,     12, "LDH A, (FF00+n)"),
-    (Pop16(AF),     12,  "POP AF"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Di,             4,  "DI"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (Push16(AF),    16,  "PUSH AF"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (LdAA16,        16,  "LD A,(a16)"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (CpN,            8,  "CP n"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-];
 
 pub struct Cpu {
     pub pc: u16,
@@ -361,11 +85,25 @@ impl Cpu {
     // - Execute the instruction
     // - Increment the cycle count
     pub fn step(&mut self) {
-        let opcode = self.load_byte();
-        let (instruction, cycles, descr) = Self::decode(opcode);
-        println!("{}", self.trace(descr));
-        self.pc += 1;
-        self.execute(instruction);
+        // TODO: Fix this ugly duplication. Too lazy right now
+        let cycles = match self.load_byte() {
+            0xCB => {
+                let opcode = self.memory.load(self.pc + 1);
+                let (instruction, cycles, descr) = Self::decode_cb(opcode);
+                println!("{}", self.trace(descr));
+                self.pc += 2;
+                self.execute(instruction);
+                cycles
+            }
+            opcode => {
+                let (instruction, cycles, descr) = Self::decode(opcode);
+                println!("{}", self.trace(descr));
+                self.pc += 1;
+                self.execute(instruction);
+                cycles
+            }
+        };
+
         self.cycles += cycles;
     }
 
@@ -392,8 +130,11 @@ impl Cpu {
     }
 
     pub fn decode(opcode: u8) -> &'static (Instruction, u64, &'static str) {
-        // TODO: CB opcodes
         OPCODES.get(opcode as usize).unwrap()
+    }
+
+    pub fn decode_cb(opcode: u8) -> &'static (Instruction, u64, &'static str) {
+        CB_OPCODES.get(opcode as usize).unwrap()
     }
 
     // Execute an instruction and returns the number of cycles taken
@@ -561,11 +302,30 @@ impl Cpu {
                 self.memory.store16(sp, self.registers.get16(r));
                 self.registers.sp = sp;
             },
+            Rr(s) => {
+                let a = self.load(s);
+                let carry = self.registers.has_flag(Flag::C) as u8;
+                let value = (carry << 7) | (a >> 1);
+                self.registers.a = value;
+                self.registers.flag(Flag::Z, false);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, (a & 1) == 1);
+            },
             Ret => {
                 let sp = self.registers.sp;
                 let pc = self.memory.load16(sp);
                 self.registers.sp = sp.wrapping_add(2);
                 self.pc = pc;
+            },
+            Srl(r) => {
+                let a = self.registers.get(r);
+                let result = a >> 1;
+                self.registers.set(r, result);
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, a & 1 == 1);
             },
             SubD8 => {
                 let a = self.registers.a;
@@ -624,6 +384,28 @@ impl Cpu {
         let word = self.load_word();
         self.pc += 2;
         word
+    }
+
+    fn load(&mut self, storage: Storage) -> u8 {
+        match storage {
+            Storage::Register(r) => self.registers.get(r),
+            Storage::Pointer(r) => {
+                let address = self.registers.get16(r);
+                self.memory.load(address)
+            }
+        }
+    }
+
+    fn store(&mut self, storage: Storage, value: u8) {
+        match storage {
+            Storage::Register(r) => {
+                self.registers.set(r, value);
+            }
+            Storage::Pointer(r) => {
+                let address = self.registers.get16(r);
+                self.memory.store(address, value)
+            }
+        }
     }
 
     fn do_call(&mut self) {
