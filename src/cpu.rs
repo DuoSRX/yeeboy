@@ -14,6 +14,7 @@ pub enum Storage {
 pub enum Instruction {
     // Adc(Storage),
     // Bit(u8, Storage),
+    AddD8,
     AndD8,
     Call,
     CallCond(Flag, bool),
@@ -45,8 +46,10 @@ pub enum Instruction {
     Pop16(Register16),
     Push16(Register16),
     Ret,
+    SubD8,
     // Sla(Storage),
     Xor(Register8),
+    XorHl,
     NotImplemented,
     Undefined,
 }
@@ -99,7 +102,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Inc16(HL),      8,  "INC HL"),
     (Inc(H),         4,  "INC H"),
     (Dec(H),         4,  "DEC H"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdN(H),         8,  "LD H, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Jr(Flag::Z, true), 8, "JR Z, nn"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -107,7 +110,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Inc(L),         4,  "INC L"),
     (Dec(L),         4,  "DEC L"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdN(L),         8,  "LD L, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 3x
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -243,7 +246,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Xor(E),         4,  "XOR E"),
     (Xor(H),         4,  "XOR H"),
     (Xor(L),         4,  "XOR L"),
-    (NotImplemented, 4,  "XOR (HL)"),
+    (XorHl,          8,  "XOR A, (HL)"),
     (Xor(A),         4,  "XOR A"),
     // Bx
     (Or(B),          4,  "OR B"),
@@ -269,7 +272,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Jp,             16, "JP"),
     (CallCond(Flag::Z, false), 4,  "CALL NZ, d16"),
     (Push16(BC),    16,  "PUSH BC"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (AddD8,          8,  "ADD d8"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Ret,           16,  "RET"),
@@ -284,9 +287,9 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Pop16(DE),     12,  "POP DE"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (CallCond(Flag::C, false), 4,  "CALL NC, d16"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Push16(DE),    16,  "PUSH DE"),
+    (SubD8,          8,  "SUB d8"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -396,6 +399,15 @@ impl Cpu {
     // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: &Instruction)  {
         match *instruction {
+            AddD8 => {
+                let b = self.load_and_bump_pc();
+                let value = self.registers.a.wrapping_add(b);
+                self.registers.a = value;
+                self.registers.flag(Flag::H, (value & 0xF) < (b & 0xF));
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::C, value < b);
+                self.registers.flag(Flag::Z, value == 0);
+            },
             AndD8 => {
                 let value = self.registers.a & self.load_and_bump_pc();
                 self.registers.a = value;
@@ -555,8 +567,27 @@ impl Cpu {
                 self.registers.sp = sp.wrapping_add(2);
                 self.pc = pc;
             },
+            SubD8 => {
+                let a = self.registers.a;
+                let b = self.load_and_bump_pc();
+                let value = a.wrapping_sub(b);
+                self.registers.a = value;
+                self.registers.flag(Flag::H, (value & 0xF) > (a & 0xF));
+                self.registers.flag(Flag::N, true);
+                self.registers.flag(Flag::C, value > a);
+                self.registers.flag(Flag::Z, a == b);
+            },
             Xor(r) => {
                 let result = self.registers.a ^ self.registers.get(r);
+                self.registers.a = result;
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, false);
+            },
+            XorHl => {
+                let b = self.memory.load(self.registers.get16(HL));
+                let result = self.registers.a ^ b;
                 self.registers.a = result;
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
