@@ -3,6 +3,7 @@
 pub mod cartridge;
 pub mod cpu;
 pub mod gpu;
+pub mod opcodes;
 pub mod memory;
 pub mod register;
 
