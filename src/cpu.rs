@@ -14,7 +14,9 @@ pub enum Storage {
 pub enum Instruction {
     // Adc(Storage),
     // Bit(u8, Storage),
+    AndD8,
     Call,
+    CallCond(Flag, bool),
     CpN,
     Dec(Register8),
     Di,
@@ -24,9 +26,13 @@ pub enum Instruction {
     Jr(Flag, bool),
     JrE8,
     Lda16A,
+    LdAA16,
     LdAR16(Register16),
     LddHlA,
+    LdHlR(Register8),
+    LdRHl(Register8),
     LdiAHl,
+    LdiHlA,
     LdN(Register8),
     LdNN(Register16),
     LdR16A(Register16),
@@ -63,7 +69,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdAR16(BC),     8,  "LD A, [BC]"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Inc(C),         4,  "INC C"),
     (Dec(C),         4,  "DEC C"),
@@ -73,14 +79,14 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "STOP"),
     (LdNN(DE),       12, "LD DE, nn"),
     (LdR16A(DE),     8, "LD [DE], A"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Inc16(DE),      8,  "INC DE"),
     (Inc(D),         4,  "INC D"),
     (Dec(D),         4,  "DEC D"),
     (LdN(D),         8,  "LD D, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (JrE8,          12,  "JR e8"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdAR16(DE),     8,  "LD A, [DE]"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Inc(E),         4,  "INC E"),
     (Dec(E),         4,  "DEC E"),
@@ -89,18 +95,18 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     // 2x
     (Jr(Flag::Z, false), 8, "JR NZ, nn"),
     (LdNN(HL),       12, "LD HL, nn"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdiHlA,         8,  "LDI (HL), A"),
     (Inc16(HL),      8,  "INC HL"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Inc(H),         4,  "INC H"),
+    (Dec(H),         4,  "DEC H"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Jr(Flag::Z, true), 8, "JR Z, nn"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (LdiAHl,         8,  "LDI A, (HL)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Inc(L),         4,  "INC L"),
+    (Dec(L),         4,  "DEC L"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 3x
@@ -127,7 +133,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (LdRR(B, E),     4,  "LD B, E"),
     (LdRR(B, H),     4,  "LD B, H"),
     (LdRR(B, L),     4,  "LD B, L"),
-    (NotImplemented, 4,  "LD B, (HL)"),
+    (LdRHl(B),       8,  "LD B, (HL)"),
     (LdRR(B, A),     4,  "LD B, A"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -135,7 +141,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdRHl(C),       8,  "LD C, (HL)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 5x
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -144,6 +150,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdRHl(D),       8,  "LD D, (HL)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -151,8 +158,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdRHl(E),       8,  "LD E, (HL)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 6x
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -161,6 +167,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdRHl(H),       8,  "LD H, (HL)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -168,25 +175,24 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdRHl(L),       8,  "LD L, (HL)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 7x
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdHlR(B),       8,  "LD (HL), B"),
+    (LdHlR(C),       8,  "LD (HL), C"),
+    (LdHlR(D),       8,  "LD (HL), D"),
+    (LdHlR(E),       8,  "LD (HL), E"),
+    (LdHlR(H),       8,  "LD (HL), H"),
+    (LdHlR(L),       8,  "LD (HL), L"),
+    (NotImplemented, 4,  "HALT"),
+    (LdHlR(A),       8,  "LD (HL), A"),
     (LdRR(A, B),     4,  "LD A, B"),
     (LdRR(A, C),     4,  "LD A, C"),
     (LdRR(A, D),     4,  "LD A, D"),
     (LdRR(A, E),     4,  "LD A, E"),
     (LdRR(A, H),     4,  "LD A, H"),
     (LdRR(A, L),     4,  "LD A, L"),
-    (NotImplemented, 4,  "LD A, (HL)"),
+    (LdRHl(A),       8,  "LD A, (HL)"),
     (LdRR(A, A),     4,  "LD A, A"),
     // 8x
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -231,13 +237,13 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Xor(B),         4,  "XOR B"),
+    (Xor(C),         4,  "XOR C"),
+    (Xor(D),         4,  "XOR D"),
+    (Xor(E),         4,  "XOR E"),
+    (Xor(H),         4,  "XOR H"),
+    (Xor(L),         4,  "XOR L"),
+    (NotImplemented, 4,  "XOR (HL)"),
     (Xor(A),         4,  "XOR A"),
     // Bx
     (Or(B),          4,  "OR B"),
@@ -261,7 +267,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Pop16(BC),     12,  "POP BC"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Jp,             16, "JP"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (CallCond(Flag::Z, false), 4,  "CALL NZ, d16"),
     (Push16(BC),    16,  "PUSH BC"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -269,7 +275,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Ret,           16,  "RET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (CallCond(Flag::Z, true), 4,  "CALL Z, d16"),
     (Call,          24,  "CALL d16"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -279,14 +285,14 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (CallCond(Flag::C, false), 4,  "CALL NC, d16"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (CallCond(Flag::C, true), 4,  "CALL C, d16"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -297,7 +303,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Push16(HL),    16,  "PUSH HL"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (AndD8,          4,  "AND d8"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -318,7 +324,7 @@ static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdAA16,        16,  "LD A,(a16)"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
@@ -390,12 +396,23 @@ impl Cpu {
     // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: &Instruction)  {
         match *instruction {
+            AndD8 => {
+                let value = self.registers.a & self.load_and_bump_pc();
+                self.registers.a = value;
+                self.registers.flag(Flag::H, true);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::C, false);
+                self.registers.flag(Flag::Z, value == 0);
+            },
             Call => {
-                let address = self.load_word();
-                let sp = self.registers.sp.wrapping_sub(2);
-                self.memory.store16(sp, self.pc + 2);
-                self.registers.sp = sp;
-                self.pc = address;
+                self.do_call();
+            },
+            CallCond(flag, cond) => {
+                if self.registers.has_flag(flag) == cond {
+                    self.do_call();
+                } else {
+                    self.pc += 2;
+                }
             },
             CpN => {
                 let a = self.registers.a;
@@ -444,14 +461,31 @@ impl Cpu {
                 let address = self.load_word_and_bump_pc();
                 self.memory.store(address, self.registers.a);
             },
+            LdAA16 => {
+                let address = self.load_word_and_bump_pc();
+                self.registers.a = self.memory.load(address);
+            },
             LddHlA => {
                 let address = self.registers.get16(HL);
                 self.memory.store(address, self.registers.a);
                 self.registers.set16(HL, address.wrapping_sub(1));
             },
+            LdHlR(r) => {
+                let address = self.registers.get16(HL);
+                self.memory.store(address, self.registers.get(r));
+            },
+            LdRHl(r) => {
+                let address = self.registers.get16(HL);
+                self.registers.set(r, self.memory.load(address));
+            },
             LdiAHl => {
                 let address = self.registers.get16(HL);
                 self.registers.a = self.memory.load(address);
+                self.registers.set16(HL, address.wrapping_add(1));
+            },
+            LdiHlA => {
+                let address = self.registers.get16(HL);
+                self.memory.store(address, self.registers.a);
                 self.registers.set16(HL, address.wrapping_add(1));
             },
             LdN(r) => {
@@ -559,6 +593,15 @@ impl Cpu {
         let word = self.load_word();
         self.pc += 2;
         word
+    }
+
+    fn do_call(&mut self) {
+        let address = self.load_word();
+        let sp = self.registers.sp.wrapping_sub(2);
+        self.memory.store16(sp, self.pc + 2);
+        self.registers.sp = sp;
+        self.pc = address;
+        self.cycles += 12;
     }
 }
 
