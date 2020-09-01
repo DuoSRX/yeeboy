@@ -3,24 +3,38 @@ use crate::memory::Memory;
 use crate::opcodes::*;
 use crate::register::{Flag, Registers, Register8, Register16, Register16::*};
 
+// TODO: Expand this to other types of operation, like nn, d8...etc
+// This would cut out drastically on the duplication in some ops
+// See for instance: xor d8, xor hl, xor
 #[derive(Clone, Copy, Debug)]
 pub enum Storage {
     Register(Register8),
-    Pointer(Register16)
+    Pointer(Register16),
+    NextByte,
 }
 
-// use Storage::*;
+// impl Storage {
+//     fn indirect(&self) -> bool {
+//         match self {
+//             Storage::Register(_) => false,
+//             Storage::Pointer(_)  => true,
+//         }
+//     }
+// }
 
+// TODO: Harmonize the naming convention
+// I wouldn't mind having longer name honestly.
+// Or even mixing camel and underscores *shudders*
 #[derive(Clone, Copy, Debug)]
 pub enum Instruction {
-    // Adc(Storage),
+    Adc(Storage),
     // Bit(u8, Storage),
     AddD8,
     AndD8,
     Call,
     CallCond(Flag, bool),
     CpN,
-    Dec(Register8),
+    Dec(Storage),
     Di,
     Inc(Register8),
     Inc16(Register16),
@@ -43,15 +57,18 @@ pub enum Instruction {
     LdSp,
     LdWriteIoN,
     NOP,
-    Or(Register8),
+    Or(Storage),
     Pop16(Register16),
     Push16(Register16),
     Ret,
+    RetCond(Flag, bool),
     Rr(Storage),
+    Rra, // RRA is the same as RR but has a different flag behaviour
     Srl(Register8),
     SubD8,
     // Sla(Storage),
     Xor(Register8),
+    XorD8,
     XorHl,
     NotImplemented,
     Undefined,
@@ -137,9 +154,12 @@ impl Cpu {
         CB_OPCODES.get(opcode as usize).unwrap()
     }
 
-    // Execute an instruction and returns the number of cycles taken
     pub fn execute(&mut self, instruction: &Instruction)  {
         match *instruction {
+            Adc(s) => {
+                let value = self.load(s);
+                self.do_adc(value as u16);
+            },
             AddD8 => {
                 let b = self.load_and_bump_pc();
                 let value = self.registers.a.wrapping_add(b);
@@ -175,11 +195,11 @@ impl Cpu {
                 self.registers.flag(Flag::C, a < byte);
                 self.registers.flag(Flag::Z, a == byte);
             },
-            Dec(r) => {
-                let reg = self.registers.get(r);
-                let result = reg.wrapping_sub(1);
-                self.registers.set(r, result);
-                self.registers.flag(Flag::H, (result & 0xF) > (reg & 0xF));
+            Dec(s) => {
+                let value = self.load(s);
+                let result = value.wrapping_sub(1);
+                self.store(s, result);
+                self.registers.flag(Flag::H, (result & 0xF) > (value & 0xF));
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, true);
             },
@@ -198,12 +218,10 @@ impl Cpu {
             }
             Jp => { let dest = self.load_word(); self.pc = dest; },
             Jr(flag, cond) => {
+                let offset = self.load_and_bump_pc() as i8;
                 if self.registers.has_flag(flag) == cond {
-                    let offset = self.load_and_bump_pc() as i8;
                     self.pc = (self.pc as u32 as i32).wrapping_add(offset as i32) as u16;
                     self.cycles += 4;
-                } else {
-                    self.pc += 1;
                 }
             },
             JrE8 => {
@@ -273,13 +291,9 @@ impl Cpu {
                 let address = n.wrapping_add(0xFF00);
                 self.memory.store(address, self.registers.a);
             },
-            Or(r) => {
-                let value = self.registers.a | self.registers.get(r);
-                self.registers.a = value;
-                self.registers.flag(Flag::C, false);
-                self.registers.flag(Flag::H, false);
-                self.registers.flag(Flag::N, false);
-                self.registers.flag(Flag::Z, value == 0);
+            Or(s) => {
+                let value = self.load(s);
+                self.do_or(value);
             },
             Pop16(AF) => {
                 let af = self.memory.load16(self.registers.sp) & 0xFFF0;
@@ -306,6 +320,16 @@ impl Cpu {
                 let a = self.load(s);
                 let carry = self.registers.has_flag(Flag::C) as u8;
                 let value = (carry << 7) | (a >> 1);
+                self.store(s, value);
+                self.registers.flag(Flag::Z, value == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, (a & 1) == 1);
+            },
+            Rra => {
+                let a = self.registers.a;
+                let carry = self.registers.has_flag(Flag::C) as u8;
+                let value = (carry << 7) | (a >> 1);
                 self.registers.a = value;
                 self.registers.flag(Flag::Z, false);
                 self.registers.flag(Flag::N, false);
@@ -317,6 +341,15 @@ impl Cpu {
                 let pc = self.memory.load16(sp);
                 self.registers.sp = sp.wrapping_add(2);
                 self.pc = pc;
+            },
+            RetCond(flag, cond) => {
+                if self.registers.has_flag(flag) == cond {
+                    let sp = self.registers.sp;
+                    let pc = self.memory.load16(sp);
+                    self.registers.sp = sp.wrapping_add(2);
+                    self.pc = pc;
+                    self.cycles += 12;
+                }
             },
             Srl(r) => {
                 let a = self.registers.get(r);
@@ -339,6 +372,14 @@ impl Cpu {
             },
             Xor(r) => {
                 let result = self.registers.a ^ self.registers.get(r);
+                self.registers.a = result;
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, false);
+            },
+            XorD8 => {
+                let result = self.registers.a ^ self.load_and_bump_pc();
                 self.registers.a = result;
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
@@ -388,6 +429,7 @@ impl Cpu {
 
     fn load(&mut self, storage: Storage) -> u8 {
         match storage {
+            Storage::NextByte => self.load_and_bump_pc(),
             Storage::Register(r) => self.registers.get(r),
             Storage::Pointer(r) => {
                 let address = self.registers.get16(r);
@@ -398,6 +440,7 @@ impl Cpu {
 
     fn store(&mut self, storage: Storage, value: u8) {
         match storage {
+            Storage::NextByte => panic!("Can't store at next byte"),
             Storage::Register(r) => {
                 self.registers.set(r, value);
             }
@@ -415,6 +458,27 @@ impl Cpu {
         self.registers.sp = sp;
         self.pc = address;
         self.cycles += 12;
+    }
+
+    fn do_adc(&mut self, value: u16) {
+        let a = self.registers.a as u16;
+        let carry = self.registers.has_flag(Flag::C) as u16;
+        let result = a + value + carry;
+        self.registers.a = (result & 0xFF) as u8;
+        let h = (a & 0xF) + (value & 0xF) + carry > 0xF;
+        self.registers.flag(Flag::Z, (result & 0xFF) == 0);
+        self.registers.flag(Flag::N, false);
+        self.registers.flag(Flag::H, h);
+        self.registers.flag(Flag::C, result > 0xFF);
+    }
+
+    fn do_or(&mut self, value: u8) {
+        let value = self.registers.a | value;
+        self.registers.a = value;
+        self.registers.flag(Flag::C, false);
+        self.registers.flag(Flag::H, false);
+        self.registers.flag(Flag::N, false);
+        self.registers.flag(Flag::Z, value == 0);
     }
 }
 
@@ -503,11 +567,11 @@ mod tests {
     #[test]
     fn test_dec() {
         let mut cpu = make_cpu();
-        cpu.registers.b = 0x12;
+        cpu.registers.b = 0x4;
         cpu.registers.flag(Flag::N, false);
         cpu.memory.store(cpu.pc, 0x05);
         cpu.step();
-        assert_eq!(cpu.registers.b, 0x11);
+        assert_eq!(cpu.registers.b, 0x3);
         assert!(cpu.registers.has_flag(Flag::N));
         assert_eq!(cpu.cycles, 4);
     }
@@ -529,7 +593,8 @@ mod tests {
         cpu.memory.store(cpu.pc + 1, -5 as i8 as u8);
         cpu.registers.flag(Flag::Z, false);
         cpu.step();
-        assert_eq!(cpu.pc, 0xFB);
+        // +2 bytes for the instruction and the operand
+        assert_eq!(cpu.pc, 0x100 + 2 - 5);
         assert_eq!(cpu.cycles, 12);
 
         let mut cpu = make_cpu();
