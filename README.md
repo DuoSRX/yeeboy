@@ -1,16 +1,24 @@
 # Yeeboy
 
 Yet another Game Boy emulator.
-Heavily WIP. Nothing work. Literally nothing. Go away.
+Heavily WIP. Nothing work. Literally nothing is useable. Go away. SHOO
 
 ## TODO:
 
-* [] Basic architecture and organization
-* [] CPU Instructions
-* [] Timers
-* [] Interrupts
-* [] GPU
-* [] Parse ROM and headers
-* [] Graphics
-* [] Mappers
-* [] Audio
+* [x] Basic architecture and organization
+* [ ] CPU Instructions
+  * Still missing a whole bunch of instructions
+  * CB Instructions (ugh)
+* [ ] Timers
+* [ ] Interrupts
+* [ ] GPU
+* [ ] Cartridges
+  * [x] ROM
+  * [ ] Headers
+  * [ ] MBC
+* [ ] Graphics
+  * [ ] SDL Frontend
+  * [ ] WASM in Browser
+* [ ] Controllers
+* [ ] Audio
+* [ ] Save
