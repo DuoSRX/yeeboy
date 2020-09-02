@@ -13,15 +13,6 @@ pub enum Storage {
     NextByte,
 }
 
-// impl Storage {
-//     fn indirect(&self) -> bool {
-//         match self {
-//             Storage::Register(_) => false,
-//             Storage::Pointer(_)  => true,
-//         }
-//     }
-// }
-
 // TODO: Harmonize the naming convention
 // I wouldn't mind having longer name honestly.
 // Or even mixing camel and underscores *shudders*
@@ -50,6 +41,7 @@ pub enum Instruction {
     LdAA16,
     LdAR16(Register16),
     LddHlA,
+    LdHlD8,
     LdHlR(Register8),
     LdRHl(Register8),
     LdiAHl,
@@ -69,6 +61,7 @@ pub enum Instruction {
     RetCond(Flag, bool),
     Rr(Storage),
     Rra, // RRA is the same as RR but has a different flag behaviour
+    Sbc(Storage),
     Srl(Register8),
     SubD8,
     Swap(Storage),
@@ -295,6 +288,11 @@ impl Cpu {
                 let address = self.load_word_and_bump_pc();
                 self.registers.a = self.memory.load(address);
             },
+            LdHlD8 => {
+                let address = self.registers.get16(HL);
+                let value = self.load_and_bump_pc();
+                self.memory.store(address, value);
+            },
             LddHlA => {
                 let address = self.registers.get16(HL);
                 self.memory.store(address, self.registers.a);
@@ -405,6 +403,10 @@ impl Cpu {
                     self.pc = pc;
                     self.cycles += 12;
                 }
+            },
+            Sbc(s) => {
+                let a = self.load(s);
+                self.do_sbc(a as i16);
             },
             Srl(r) => {
                 let a = self.registers.get(r);
@@ -545,6 +547,18 @@ impl Cpu {
         self.registers.flag(Flag::H, false);
         self.registers.flag(Flag::N, false);
         self.registers.flag(Flag::Z, value == 0);
+    }
+
+    fn do_sbc(&mut self, b: i16) {
+        let a = self.registers.a as i16;
+        let carry = self.registers.has_flag(Flag::C) as i16;
+        let result = a - b - carry;
+        self.registers.a = (result & 0xFF) as u8;
+        let h = (a & 0xF) - (b & 0xF) - carry < 0;
+        self.registers.flag(Flag::Z, (result & 0xFF) == 0);
+        self.registers.flag(Flag::N, true);
+        self.registers.flag(Flag::H, h);
+        self.registers.flag(Flag::C, result < 0);
     }
 
     fn do_swap(&mut self, s: Storage) {
