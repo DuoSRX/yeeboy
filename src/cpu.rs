@@ -39,7 +39,7 @@ pub enum Instruction {
     Daa,
     Dec(Storage),
     Di,
-    Inc(Register8),
+    Inc(Storage),
     Inc16(Register16),
     Jp,
     JpCond(Flag, bool),
@@ -243,11 +243,19 @@ impl Cpu {
                 self.registers.flag(Flag::C, result & 0x60 != 0);
             }
             Di => self.ime = false,
-            Inc(r) => {
-                let reg = self.registers.get(r);
-                let result = reg.wrapping_add(1);
-                self.registers.set(r, result);
-                self.registers.flag(Flag::H, (result & 0xF) < (reg & 0xF));
+            Inc(s @ Storage::Pointer(HL)) => {
+                let a = self.load(s);
+                let result = a.wrapping_add(1);
+                self.store(s, result);
+                self.registers.flag(Flag::H, (result & 0xF) == 0);
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+            },
+            Inc(s) => {
+                let a = self.load(s);
+                let result = a.wrapping_add(1);
+                self.store(s, result);
+                self.registers.flag(Flag::H, (result & 0xF) < (a & 0xF));
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
             },
