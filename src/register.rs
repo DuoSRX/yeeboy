@@ -143,7 +143,7 @@ impl Registers {
         }
     }
 
-    fn set_flag(&mut self, flag: Flag) {
+    pub fn set_flag(&mut self, flag: Flag) {
         match flag {
             Flag::Z => self.f |= ZERO_FLAG,
             Flag::N => self.f |= NEGATIVE_FLAG,
@@ -152,7 +152,7 @@ impl Registers {
         }
     }
 
-    fn unset_flag(&mut self, flag: Flag) {
+    pub fn unset_flag(&mut self, flag: Flag) {
         match flag {
             Flag::Z => self.f &= !ZERO_FLAG & 0xFF,
             Flag::N => self.f &= !NEGATIVE_FLAG & 0xFF,
