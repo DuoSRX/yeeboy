@@ -11,19 +11,20 @@ enum Mode {
 use Mode::*;
 
 pub struct Gpu {
+    rom: Vec<u8>,
     mode: Mode,
     pub cycles: u64,
     pub ly: u8,
-    pub lcd: usize,
+    pub lcd: u8,
     pub frame: Vec<u8>,
     pub vram: Vec<u8>,
     pub interrupts: usize,
     pub oam: Vec<Sprite>,
     pub new_frame: bool,
-    rom: Vec<u8>,
-    control: u8,
-    scroll_x: u8,
-    scroll_y: u8,
+    pub control: u8,
+    pub scroll_x: u8,
+    pub scroll_y: u8,
+    pub bg_palette: u8,
 }
 
 impl Gpu {
@@ -37,7 +38,8 @@ impl Gpu {
             scroll_y: 0,
             control: 0,
             interrupts: 0,
-            frame: vec![0; 160 * 144],
+            bg_palette: 0,
+            frame: vec![0xFF; 160 * 144 * 3],
             vram: vec![0; 0x2000],
             oam: vec![Sprite::new(); 0x40],
             new_frame: false,
@@ -57,11 +59,11 @@ impl Gpu {
             LcdTransfer if self.cycles >= 172 => {
                 self.cycles -= 172;
                 if lcd_on {
-                    // if self.control & 1 == 0 {
-                        // self.clear_frame();
-                    // } else {
+                    if self.control & 1 == 1 {
                         self.render_background();
-                    // }
+                    } else {
+                        self.clear_frame();
+                    }
                     // TODO: render window
                     // self.render_sprites();
                 }
@@ -93,7 +95,7 @@ impl Gpu {
     }
 
     fn render_background(&mut self) {
-        let palette = 0b11101101;
+        let palette = self.bg_palette;
         let colors = [
             palette & 3,
             (palette >> 2) & 3,
@@ -106,13 +108,12 @@ impl Gpu {
         let scroll_x = self.scroll_x as u16;
         let scroll_y = self.scroll_y as u16;
         let tile_data: u16 = 0x8000; // TODO: Check control 0x10
-        let tile_map: u16 = 0x9C00; // TODO: Check control 0x08
+        let tile_map: u16 = 0x9800; // TODO: Check control 0x08
         let y: u16 = ((scroll_y + ly) / 8) % 32;
         let y_offset = (scroll_y + ly) % 8;
 
         for px in 0..160 {
-            // let x = (((self.scroll_x + px) / 8) % 32) & 0xFFFF;
-            let x = (px / 8) % 32;
+            let x = ((scroll_x + px) / 8) % 32;
             let tile = self.load(tile_map.wrapping_add(y * 32).wrapping_add(x));
             // Handle > 0x9000
             let ptr = tile_data.wrapping_add(tile as u16 * 0x10);
@@ -123,7 +124,7 @@ impl Gpu {
             let coln = if (p1 >> colb) & 1 == 1 { 1 } else { 0 };
             let coln = (coln << 1) | (if (p0 >> colb) & 1 == 1 { 1 } else { 0 });
             let color = colors[coln as usize];
-            self.set_pixel(x as u8, y as u8, color);
+            self.set_pixel(px as u8, ly as u8, color);
         }
     }
 
@@ -132,9 +133,7 @@ impl Gpu {
         let ly = self.ly as i16;
 
         let mut n = 0;
-
         while n < 156 {
-
             let sprite = self.oam[n / 4];
 
             let y = sprite.y as i16 - 16;
@@ -236,7 +235,10 @@ impl Gpu {
 
     fn set_pixel(&mut self, x: u8, y: u8, color: u8) {
         let offset = y as usize * 160 + x as usize;
-        self.frame[offset] = color;
+        let color = color as usize;
+        self.frame[offset] = COLOR_MAP[color].0;
+        self.frame[offset+1] = COLOR_MAP[color].1;
+        self.frame[offset+2] = COLOR_MAP[color].2;
     }
 
     fn clear_frame(&mut self) {
@@ -264,3 +266,9 @@ impl Sprite {
         }
     }
 }
+pub static COLOR_MAP: [(u8, u8, u8); 4] = [
+    (0x9B, 0xBC, 0x0F),
+    (0x8B, 0xAC, 0x0F),
+    (0x30, 0x62, 0x30),
+    (0x0F, 0x38, 0x0F),
+];

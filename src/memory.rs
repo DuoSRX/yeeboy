@@ -26,6 +26,11 @@ impl Memory {
 
     pub fn load(&mut self, address: u16) -> u8 {
         match address {
+            0xFF40 => self.gpu.control,
+            0xFF42 => self.gpu.scroll_y,
+            0xFF43 => self.gpu.scroll_x,
+            0xFF44 => self.gpu.ly,
+            0xFF47 => self.gpu.bg_palette,
             0x0000..=0x7FFF => self.cartridge.rom[address as usize],
             0x8000..=0x9FFF => self.gpu.load(address),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize],
@@ -46,7 +51,13 @@ impl Memory {
         }
         match address {
             // 0x0000..=0x7FFF => self.cartridge.rom[address as usize] = value,
+            // 0xFF40 => { println!("{:08b}", value); self.gpu.control = value },
+            0xFF40 => self.gpu.control = value,
+            0xFF42 => self.gpu.scroll_y = value,
+            0xFF43 => self.gpu.scroll_x = value,
+            0xFF44 => self.gpu.ly = 0,
             0xFF46 => { dbg!("DMA"); }, // TODO
+            0xFF47 => self.gpu.bg_palette = value,
             0x8000..=0x9FFF => self.gpu.store(address, value),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize] = value,
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
