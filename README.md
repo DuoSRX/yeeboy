@@ -39,6 +39,6 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 * [x] ~~06-ld_r_r~~
 * [ ] 07-jr_jp_call_ret_rst
 * [ ] 08-misc_instrs
-* [ ] 09-op_r_r
+* [x] ~~09-op_r_r~~
 * [ ] 10-bit_ops
 * [ ] 11-op_a_hl
