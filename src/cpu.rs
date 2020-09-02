@@ -22,6 +22,7 @@ pub enum Instruction {
     // Bit(u8, Storage),
     Add(Storage),
     AddHlR16(Register16),
+    AddSpE8,
     And(Storage),
     Call,
     CallCond(Flag, bool),
@@ -30,6 +31,7 @@ pub enum Instruction {
     Cpl,
     Daa,
     Dec(Storage),
+    Dec16(Register16),
     Di,
     Inc(Storage),
     Inc16(Register16),
@@ -45,6 +47,7 @@ pub enum Instruction {
     LddHlA,
     LdHlD8,
     LdHlR(Register8),
+    LdHlSpE8,
     LdRHl(Register8),
     LdiAHl,
     LdiHlA,
@@ -182,6 +185,19 @@ impl Cpu {
                 self.registers.flag(Flag::C, value < b);
                 self.registers.flag(Flag::Z, value == 0);
             },
+            AddSpE8 => {
+                let a = self.registers.sp as i32;
+                let b = self.load_and_bump_pc() as i8 as i8;
+                let bb = b as i32;
+                let result = a.wrapping_add(bb);
+                self.registers.sp = result as u16;
+                let h = ((a & 0xF) + (bb & 0xF)) > 0xF;
+                let c = ((a & 0xFF) + (bb & 0xFF)) > 0xFF;
+                self.registers.flag(Flag::H, h);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::C, c);
+                self.registers.flag(Flag::Z, false);
+            }
             And(s) => {
                 let a = self.load(s);
                 let value = self.registers.a & a;
@@ -233,6 +249,10 @@ impl Cpu {
                 self.registers.flag(Flag::H, (result & 0xF) > (value & 0xF));
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, true);
+            },
+            Dec16(r) => {
+                let value = self.registers.get16(r).wrapping_sub(1);
+                self.registers.set16(r, value);
             },
             Daa => {
                 // WHAT IS EVEN GOING ON HERE OH GOD
@@ -327,6 +347,19 @@ impl Cpu {
                 let address = self.registers.get16(HL);
                 self.memory.store(address, self.registers.get(r));
             },
+            LdHlSpE8 => {
+                let a = self.registers.sp as i32;
+                let b = self.load_and_bump_pc() as i8 as i8;
+                let bb = b as i32;
+                let result = a.wrapping_add(bb);
+                self.registers.set16(HL, result as u16);
+                let h = ((a & 0xF) + (bb & 0xF)) > 0xF;
+                let c = ((a & 0xFF) + (bb & 0xFF)) > 0xFF;
+                self.registers.flag(Flag::H, h);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::C, c);
+                self.registers.flag(Flag::Z, false);
+            }
             LdRHl(r) => {
                 let address = self.registers.get16(HL);
                 self.registers.set(r, self.memory.load(address));
