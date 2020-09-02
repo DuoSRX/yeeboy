@@ -106,8 +106,8 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (LdRR(E, C),     4,  "LD E, C"),
     (LdRR(E, D),     4,  "LD E, D"),
     (LdRR(E, E),     4,  "LD E, E"),
-    (LdRR(B, H),     4,  "LD E, H"),
-    (LdRR(B, L),     4,  "LD E, L"),
+    (LdRR(E, H),     4,  "LD E, H"),
+    (LdRR(E, L),     4,  "LD E, L"),
     (LdRHl(E),       8,  "LD E, (HL)"),
     (LdRR(E, A),     4,  "LD E, A"),
     // 6x
