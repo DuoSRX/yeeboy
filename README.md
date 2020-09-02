@@ -35,7 +35,7 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 * [ ] 02-interrupts
 * [ ] 03-op_sp_hl
 * [ ] 04-op_r_imm
-* [ ] 05-op_rp
+* [x] ~~05-op_rp~~
 * [x] ~~06-ld_r_r~~
 * [ ] 07-jr_jp_call_ret_rst
 * [ ] 08-misc_instrs
