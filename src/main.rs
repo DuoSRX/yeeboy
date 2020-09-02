@@ -7,40 +7,14 @@ pub mod opcodes;
 pub mod memory;
 pub mod register;
 
-use cpu::Cpu;
-use cartridge::Cartridge;
-// use memory::Memory;
-
 use std::fs::File;
 
-// struct Console {
-//     cpu: Cpu,
-//     running: bool,
-// }
+use sdl2::pixels::PixelFormatEnum;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 
-// impl Console {
-//     fn new() -> Self {
-//         Self {
-//             cpu: Cpu::new(),
-//             running: false,
-//         }
-//     }
-
-//     fn run(&mut self) {
-//         while self.running {
-//         //    self.cpu.step()
-//         //    self.gpu.step();
-//            // Reset cycle counter
-//            // CPU step
-//            // Check for LCD_ON
-//            // GPU step
-//            // Check for interrupts
-//            // Check for new GPU frame IF LCD is on
-//            // Trace if steps is > 400_000
-//            // Repeat until self.running == false
-//         }
-//     }
-// }
+use sdl2::pixels::Color;
+// use std::time::Duration;
 
 fn main() {
     // let mut file = File::open("roms/tetris.gb").unwrap();
@@ -53,16 +27,42 @@ fn main() {
     let mut file = File::open("roms/07-jr_jp_call_ret_rst.gb").unwrap();
     // let mut file = File::open("roms/08-misc_instrs.gb").unwrap();
     // let mut file = File::open("roms/09-op_r_r.gb").unwrap();
-    let cartridge = Cartridge::load(&mut file);
+    let cartridge = cartridge::Cartridge::load(&mut file);
     dbg!(cartridge.rom.len());
 
-    let mut cpu = Cpu::new(cartridge);
+    let mut cpu = cpu::Cpu::new(cartridge);
 
-    // for _ in 0..500000 {
-        // cpu.step();
-    // }
+    let sdl_context = sdl2::init().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
 
-    loop {
+    let window = video_subsystem.window("rust-sdl2 demo: Video", 800, 600)
+        .position_centered()
+        .opengl()
+        .build()
+        .map_err(|e| e.to_string())
+        .unwrap();
+
+    let mut canvas = window.into_canvas().build().map_err(|e| e.to_string()).unwrap();
+    canvas.set_draw_color(Color::RGB(255, 0, 0));
+    canvas.clear();
+    canvas.present();
+
+    let tex_creator = canvas.texture_creator();
+    let mut texture = tex_creator.create_texture_target(PixelFormatEnum::BGR24, 160, 144).unwrap();
+
+    let mut event_pump = sdl_context.event_pump().unwrap();
+
+    'running: loop {
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                    break 'running
+                },
+                _ => {}
+            }
+        }
+        // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 30));
+
         let prev_cy = cpu.cycles;
         cpu.step();
 
@@ -77,7 +77,10 @@ fn main() {
         // TODO: Cpu interrupts
         // TODO: Check for new frame & lcd_on
         if cpu.memory.gpu.new_frame && lcd_on {
-            // dbg!(&cpu.memory.gpu.frame);
+            texture.update(None, &cpu.memory.gpu.frame, 160 * 3).unwrap();
+            canvas.clear();
+            canvas.copy(&texture, None, None).unwrap();
+            canvas.present();
             cpu.memory.gpu.new_frame = false;
         }
 
