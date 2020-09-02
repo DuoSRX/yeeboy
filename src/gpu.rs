@@ -107,16 +107,18 @@ impl Gpu {
         let ly = self.ly as u16;
         let scroll_x = self.scroll_x as u16;
         let scroll_y = self.scroll_y as u16;
-        let tile_data: u16 = 0x8000; // TODO: Check control 0x10
-        let tile_map: u16 = 0x9800; // TODO: Check control 0x08
+        let tile_data = self.tile_data();
+        let tile_map = self.tile_map();
         let y: u16 = ((scroll_y + ly) / 8) % 32;
         let y_offset = (scroll_y + ly) % 8;
 
         for px in 0..160 {
             let x = ((scroll_x + px) / 8) % 32;
             let tile = self.load(tile_map.wrapping_add(y * 32).wrapping_add(x));
-            // Handle > 0x9000
-            let ptr = tile_data.wrapping_add(tile as u16 * 0x10);
+            let ptr = match tile_data {
+                0x9000 => (tile_data as i32 + (tile as i8 as i32 * 0x10)) as u16,
+                _      => tile_data.wrapping_add(tile as u16 * 0x10),
+            };
             let ptr = ptr.wrapping_add(y_offset * 2);
             let p0 = self.load(ptr);
             let p1 = self.load(ptr + 1);
@@ -244,6 +246,20 @@ impl Gpu {
     fn clear_frame(&mut self) {
         for v in &mut self.frame {
             *v = 0;
+        }
+    }
+
+    fn tile_data(&self) -> u16 {
+        match self.control & 0x10 > 0 {
+            true => 0x8000,
+            _    => 0x9000,
+        }
+    }
+
+    fn tile_map(&self) -> u16 {
+        match self.control & 0x08 > 0 {
+            true => 0x9C00,
+            _    => 0x9800,
         }
     }
 }
