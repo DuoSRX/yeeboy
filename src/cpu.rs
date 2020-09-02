@@ -34,12 +34,15 @@ pub enum Instruction {
     AndD8,
     Call,
     CallCond(Flag, bool),
-    CpN,
+    Cp(Storage),
+    Cpl,
+    Daa,
     Dec(Storage),
     Di,
     Inc(Register8),
     Inc16(Register16),
     Jp,
+    JpCond(Flag, bool),
     JpHl,
     Jr(Flag, bool),
     JrE8,
@@ -200,13 +203,14 @@ impl Cpu {
                     self.pc += 2;
                 }
             },
-            CpN => {
-                let a = self.registers.a;
-                let byte = self.load_and_bump_pc();
-                self.registers.flag(Flag::H, (byte & 0xF) > (a & 0xF));
+            Cp(s) => {
+                let byte = self.load(s);
+                self.do_cp(byte);
+            },
+            Cpl => {
+                self.registers.a ^= 0xFF;
+                self.registers.flag(Flag::H, true);
                 self.registers.flag(Flag::N, true);
-                self.registers.flag(Flag::C, a < byte);
-                self.registers.flag(Flag::Z, a == byte);
             },
             Dec(s) => {
                 let value = self.load(s);
@@ -216,6 +220,28 @@ impl Cpu {
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, true);
             },
+            Daa => {
+                // WHAT IS EVEN GOING ON HERE OH GOD
+                // WHY IS THIS EVEN WORKING
+                let n = self.registers.has_flag(Flag::N);
+                let h = self.registers.has_flag(Flag::H);
+                let c = self.registers.has_flag(Flag::C);
+                let a = self.registers.a;
+                let mut result = 0;
+                if h { result |= 0x06 };
+                if c { result |= 0x60 };
+                let total = if n {
+                    a.wrapping_sub(result)
+                } else {
+                    if a & 0xF > 9 { result |= 0x06 };
+                    if a > 0x99 { result |= 0x60 };
+                    a.wrapping_add(result)
+                };
+                self.registers.a = total;
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::Z, total == 0);
+                self.registers.flag(Flag::C, result & 0x60 != 0);
+            }
             Di => self.ime = false,
             Inc(r) => {
                 let reg = self.registers.get(r);
@@ -231,6 +257,13 @@ impl Cpu {
             }
             Jp => {
                 self.pc = self.load_word();
+            },
+            JpCond(flag, cond) => {
+                let address = self.load_word_and_bump_pc();
+                if self.registers.has_flag(flag) == cond {
+                    self.pc = address;
+                    self.cycles += 4;
+                }
             },
             JpHl => {
                 self.pc = self.registers.get16(HL);
@@ -317,7 +350,7 @@ impl Cpu {
                 let af = self.memory.load16(self.registers.sp) & 0xFFF0;
                 let sp = self.registers.sp.wrapping_add(2);
                 self.registers.set16(AF, af);
-                self.registers.sp = sp;
+                self.registers.set16(SP, sp);
                 self.registers.flag(Flag::C, af & 0x10 > 0);
                 self.registers.flag(Flag::H, af & 0x20 > 0);
                 self.registers.flag(Flag::N, af & 0x40 > 0);
@@ -491,6 +524,14 @@ impl Cpu {
         self.registers.flag(Flag::N, false);
         self.registers.flag(Flag::H, h);
         self.registers.flag(Flag::C, result > 0xFF);
+    }
+
+    fn do_cp(&mut self, byte: u8) {
+        let a = self.registers.a;
+        self.registers.flag(Flag::H, (byte & 0xF) > (a & 0xF));
+        self.registers.flag(Flag::N, true);
+        self.registers.flag(Flag::C, a < byte);
+        self.registers.flag(Flag::Z, a == byte);
     }
 
     fn do_or(&mut self, value: u8) {
