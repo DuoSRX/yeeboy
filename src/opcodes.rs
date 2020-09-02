@@ -134,7 +134,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (LdHlR(E),       8,  "LD (HL), E"),
     (LdHlR(H),       8,  "LD (HL), H"),
     (LdHlR(L),       8,  "LD (HL), L"),
-    (NotImplemented, 4,  "HALT"),
+    (Halt,           4,  "HALT"),
     (LdHlR(A),       8,  "LD (HL), A"),
     (LdRR(A, B),     4,  "LD A, B"),
     (LdRR(A, C),     4,  "LD A, C"),
