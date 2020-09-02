@@ -36,6 +36,7 @@ pub enum Instruction {
     Ei,
     Inc(Storage),
     Inc16(Register16),
+    Halt,
     Jp,
     JpCond(Flag, bool),
     JpHl,
@@ -102,6 +103,7 @@ pub struct Cpu {
     pub memory: Memory,
     pub cycles: u64,
     pub ime: bool,
+    pub halted: bool,
 }
 
 impl Cpu {
@@ -112,6 +114,7 @@ impl Cpu {
             pc: 0x100,
             cycles: 0,
             ime: true,
+            halted: false,
             memory,
         }
     }
@@ -289,6 +292,7 @@ impl Cpu {
             }
             Di => self.ime = false,
             Ei => self.ime = true,
+            Halt => self.halted = true,
             Inc(s @ Storage::Pointer(HL)) => {
                 let a = self.load(s);
                 let result = a.wrapping_add(1);
