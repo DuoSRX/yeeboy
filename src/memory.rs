@@ -7,7 +7,7 @@ pub struct Memory  {
     high_ram: Vec<u8>,
     io: Vec<u8>,
     pub serial: Vec<char>, // for debugging only
-    gpu: Gpu,
+    pub gpu: Gpu,
 }
 
 impl Memory {
@@ -27,7 +27,7 @@ impl Memory {
     pub fn load(&mut self, address: u16) -> u8 {
         match address {
             0x0000..=0x7FFF => self.cartridge.rom[address as usize],
-            0x8000..=0x9FFF => 0, // TODO: vram
+            0x8000..=0x9FFF => self.gpu.load(address),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize],
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],
             0xFE00..=0xFE9F => 0, // TODO: OAM
@@ -46,10 +46,11 @@ impl Memory {
         }
         match address {
             // 0x0000..=0x7FFF => self.cartridge.rom[address as usize] = value,
-            0x8000..=0x9FFF => {}, // TODO: vram
+            0xFF46 => { dbg!("DMA"); }, // TODO
+            0x8000..=0x9FFF => self.gpu.store(address, value),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize] = value,
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
-            0xFE00..=0xFE9F => {} // TODO: OAM
+            0xFE00..=0xFE9F => self.gpu.oam_store(address & 0x9F, value),
             0xFEA0..=0xFEFF => {} // No-op
             0xFF00..=0xFF7F => self.io[address as usize - 0xFF00] = value,
             0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80] = value,
