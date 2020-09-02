@@ -66,7 +66,8 @@ fn main() {
         let prev_cy = cpu.cycles;
         cpu.step();
 
-        let lcd_on = cpu.memory.load(0xFF40) & 0x80 > 0;
+        // let lcd_on = cpu.memory.load(0xFF40) & 0x80 > 0;
+        let lcd_on = true;
         cpu.memory.gpu.step(cpu.cycles - prev_cy, lcd_on);
 
         if cpu.memory.gpu.interrupts > 0 {
@@ -76,7 +77,7 @@ fn main() {
         // TODO: Cpu interrupts
         // TODO: Check for new frame & lcd_on
         if cpu.memory.gpu.new_frame && lcd_on {
-            // dbg!(&cpu.memory.gpu.oam);
+            // dbg!(&cpu.memory.gpu.frame);
             cpu.memory.gpu.new_frame = false;
         }
 

@@ -13,7 +13,7 @@ use Mode::*;
 pub struct Gpu {
     mode: Mode,
     pub cycles: u64,
-    pub ly: u64,
+    pub ly: u8,
     pub lcd: usize,
     pub frame: Vec<u8>,
     pub vram: Vec<u8>,
@@ -57,11 +57,13 @@ impl Gpu {
             LcdTransfer if self.cycles >= 172 => {
                 self.cycles -= 172;
                 if lcd_on {
-                    if self.control & 1 == 0 {
-                        self.clear_frame();
-                    }
-                    // TODO: render window or background
-                    self.render_sprites();
+                    // if self.control & 1 == 0 {
+                        // self.clear_frame();
+                    // } else {
+                        self.render_background();
+                    // }
+                    // TODO: render window
+                    // self.render_sprites();
                 }
                 self.set_mode(HBlank)
             }
@@ -88,6 +90,41 @@ impl Gpu {
         }
 
         // TODO: Compare ly and lyc and fire interrupt
+    }
+
+    fn render_background(&mut self) {
+        let palette = 0b11101101;
+        let colors = [
+            palette & 3,
+            (palette >> 2) & 3,
+            (palette >> 4) & 3,
+            (palette >> 6) & 3,
+        ];
+
+        // http://bgb.bircd.org/pandocs.htm#lcdpositionandscrolling
+        let ly = self.ly as u16;
+        let scroll_x = self.scroll_x as u16;
+        let scroll_y = self.scroll_y as u16;
+        let tile_data: u16 = 0x8000; // TODO: Check control 0x10
+        let tile_map: u16 = 0x9C00; // TODO: Check control 0x08
+        let y: u16 = ((scroll_y + ly) / 8) % 32;
+        let y_offset = (scroll_y + ly) % 8;
+
+        for px in 0..160 {
+            // let x = (((self.scroll_x + px) / 8) % 32) & 0xFFFF;
+            let x = (px / 8) % 32;
+            let tile = self.load(tile_map.wrapping_add(y * 32).wrapping_add(x));
+            // Handle > 0x9000
+            let ptr = tile_data.wrapping_add(tile as u16 * 0x10);
+            let ptr = ptr.wrapping_add(y_offset * 2);
+            let p0 = self.load(ptr);
+            let p1 = self.load(ptr + 1);
+            let colb = -(((px + scroll_x) as i32 % 8) - 7);
+            let coln = if (p1 >> colb) & 1 == 1 { 1 } else { 0 };
+            let coln = (coln << 1) | (if (p0 >> colb) & 1 == 1 { 1 } else { 0 });
+            let color = colors[coln as usize];
+            self.set_pixel(x as u8, y as u8, color);
+        }
     }
 
     fn render_sprites(&mut self) {
@@ -198,8 +235,8 @@ impl Gpu {
     }
 
     fn set_pixel(&mut self, x: u8, y: u8, color: u8) {
-        let offset = y * 160 + x;
-        self.frame[offset as usize] = color;
+        let offset = y as usize * 160 + x as usize;
+        self.frame[offset] = color;
     }
 
     fn clear_frame(&mut self) {
