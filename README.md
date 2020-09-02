@@ -3,6 +3,8 @@
 Yet another Game Boy emulator.
 Heavily WIP. Nothing work. Literally nothing is useable. Go away. SHOO
 
+Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com/DuoSRX/yobml) written in ReasonML.
+
 ## TODO:
 
 * [x] Basic architecture and organization
@@ -20,9 +22,12 @@ Heavily WIP. Nothing work. Literally nothing is useable. Go away. SHOO
   * [ ] SDL Frontend
   * [ ] WASM in Browser
 * [ ] Controllers
+* [ ] CLI flags
 * [ ] Audio
 * [ ] Save
-
+* [ ] Logger
+* [ ] Debugger
+* [ ] Config file
 
 ## Blaargs tests:
 
