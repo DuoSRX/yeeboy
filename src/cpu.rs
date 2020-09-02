@@ -39,6 +39,7 @@ pub enum Instruction {
     Jr(Flag, bool),
     JrE8,
     Lda16A,
+    Lda16Sp,
     LdAA16,
     LdAR16(Register16),
     LddHlA,
@@ -53,12 +54,14 @@ pub enum Instruction {
     LdReadIoN,
     LdRR(Register8, Register8),
     LdSp,
+    LdSpHl,
     LdWriteIoN,
     NOP,
     Or(Storage),
     Pop16(Register16),
     Push16(Register16),
     Ret,
+    Reti,
     RetCond(Flag, bool),
     Rr(Storage),
     Rl(Storage),
@@ -68,6 +71,7 @@ pub enum Instruction {
     Rra, // RRA is the same as RR but has a different flag behaviour
     Rrc(Storage),
     Rrca,
+    Rst(u16),
     Sbc(Storage),
     Scf,
     Sla(Storage),
@@ -301,6 +305,10 @@ impl Cpu {
                 let address = self.load_word_and_bump_pc();
                 self.memory.store(address, self.registers.a);
             },
+            Lda16Sp => {
+                let address = self.load_word_and_bump_pc();
+                self.memory.store16(address, self.registers.sp);
+            },
             LdAA16 => {
                 let address = self.load_word_and_bump_pc();
                 self.registers.a = self.memory.load(address);
@@ -360,6 +368,9 @@ impl Cpu {
             LdSp => {
                 self.registers.sp = self.load_word_and_bump_pc();
             },
+            LdSpHl => {
+                self.registers.sp = self.registers.get16(HL);
+            },
             LdWriteIoN => {
                 let n = self.load_and_bump_pc() as u16;
                 let address = n.wrapping_add(0xFF00);
@@ -385,6 +396,28 @@ impl Cpu {
                 let sp = self.registers.sp.wrapping_sub(2);
                 self.memory.store16(sp, self.registers.get16(r));
                 self.registers.sp = sp;
+            },
+            Ret => {
+                let sp = self.registers.sp;
+                let pc = self.memory.load16(sp);
+                self.registers.sp = sp.wrapping_add(2);
+                self.pc = pc;
+            },
+            Reti => {
+                let sp = self.registers.sp;
+                let pc = self.memory.load16(sp);
+                self.registers.sp = sp.wrapping_add(2);
+                self.pc = pc;
+                self.ime = true;
+            },
+            RetCond(flag, cond) => {
+                if self.registers.has_flag(flag) == cond {
+                    let sp = self.registers.sp;
+                    let pc = self.memory.load16(sp);
+                    self.registers.sp = sp.wrapping_add(2);
+                    self.pc = pc;
+                    self.cycles += 12;
+                }
             },
             Rl(s) => {
                 let a = self.load(s);
@@ -469,21 +502,12 @@ impl Cpu {
                 self.registers.flag(Flag::H, false);
                 self.registers.flag(Flag::C, c == 1);
             },
-            Ret => {
-                let sp = self.registers.sp;
-                let pc = self.memory.load16(sp);
-                self.registers.sp = sp.wrapping_add(2);
-                self.pc = pc;
-            },
-            RetCond(flag, cond) => {
-                if self.registers.has_flag(flag) == cond {
-                    let sp = self.registers.sp;
-                    let pc = self.memory.load16(sp);
-                    self.registers.sp = sp.wrapping_add(2);
-                    self.pc = pc;
-                    self.cycles += 12;
-                }
-            },
+            Rst(n) => {
+                let sp = self.registers.sp.wrapping_sub(2);
+                self.memory.store16(sp, self.pc);
+                self.registers.sp = sp;
+                self.pc = n;
+            }
             Sbc(s) => {
                 let a = self.load(s);
                 self.do_sbc(a as i16);
