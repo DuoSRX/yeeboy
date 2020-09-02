@@ -20,11 +20,12 @@ pub enum Storage {
 pub enum Instruction {
     Adc(Storage),
     // Bit(u8, Storage),
-    AddD8,
+    Add(Storage),
     AddHlR16(Register16),
-    AndD8,
+    And(Storage),
     Call,
     CallCond(Flag, bool),
+    Ccf,
     Cp(Storage),
     Cpl,
     Daa,
@@ -60,10 +61,13 @@ pub enum Instruction {
     Ret,
     RetCond(Flag, bool),
     Rr(Storage),
+    Rla,
+    Rlca,
     Rra, // RRA is the same as RR but has a different flag behaviour
     Sbc(Storage),
+    Scf,
     Srl(Register8),
-    SubD8,
+    Sub(Storage),
     Swap(Storage),
     // Sla(Storage),
     Xor(Register8),
@@ -159,8 +163,8 @@ impl Cpu {
                 let value = self.load(s);
                 self.do_adc(value as u16);
             },
-            AddD8 => {
-                let b = self.load_and_bump_pc();
+            Add(s) => {
+                let b = self.load(s);
                 let value = self.registers.a.wrapping_add(b);
                 self.registers.a = value;
                 self.registers.flag(Flag::H, (value & 0xF) < (b & 0xF));
@@ -168,8 +172,9 @@ impl Cpu {
                 self.registers.flag(Flag::C, value < b);
                 self.registers.flag(Flag::Z, value == 0);
             },
-            AndD8 => {
-                let value = self.registers.a & self.load_and_bump_pc();
+            And(s) => {
+                let a = self.load(s);
+                let value = self.registers.a & a;
                 self.registers.a = value;
                 self.registers.flag(Flag::H, true);
                 self.registers.flag(Flag::N, false);
@@ -195,6 +200,12 @@ impl Cpu {
                 } else {
                     self.pc += 2;
                 }
+            },
+            Ccf => {
+                let flag = self.registers.has_flag(Flag::C);
+                self.registers.flag(Flag::C, !flag);
+                self.registers.unset_flag(Flag::H);
+                self.registers.unset_flag(Flag::N);
             },
             Cp(s) => {
                 let byte = self.load(s);
@@ -369,6 +380,28 @@ impl Cpu {
                 self.memory.store16(sp, self.registers.get16(r));
                 self.registers.sp = sp;
             },
+            Rla => {
+                let a = self.registers.a;
+                let prev_carry = self.registers.has_flag(Flag::C) as u8;
+                let c = (a >> 7) & 1;
+                let a = (a << 1) | prev_carry;
+                self.registers.a = a;
+                self.registers.flag(Flag::Z, false);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, c == 1);
+            },
+            Rlca => {
+                let a = self.registers.a;
+                let c = a & 0x80 > 0;
+                let a = (a << 1) & 0xFF;
+                let a = if c { a | 1 } else { a };
+                self.registers.a = a;
+                self.registers.flag(Flag::Z, false);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, c);
+            },
             Rr(s) => {
                 let a = self.load(s);
                 let carry = self.registers.has_flag(Flag::C) as u8;
@@ -408,6 +441,11 @@ impl Cpu {
                 let a = self.load(s);
                 self.do_sbc(a as i16);
             },
+            Scf => {
+                self.registers.set_flag(Flag::C);
+                self.registers.unset_flag(Flag::H);
+                self.registers.unset_flag(Flag::N);
+            }
             Srl(r) => {
                 let a = self.registers.get(r);
                 let result = a >> 1;
@@ -417,9 +455,9 @@ impl Cpu {
                 self.registers.flag(Flag::H, false);
                 self.registers.flag(Flag::C, a & 1 == 1);
             },
-            SubD8 => {
+            Sub(s) => {
                 let a = self.registers.a;
-                let b = self.load_and_bump_pc();
+                let b = self.load(s);
                 let value = a.wrapping_sub(b);
                 self.registers.a = value;
                 self.registers.flag(Flag::H, (value & 0xF) > (a & 0xF));
