@@ -12,15 +12,18 @@ use Mode::*;
 
 pub struct Gpu {
     mode: Mode,
-    pub cycles: usize,
-    pub ly: usize,
+    pub cycles: u64,
+    pub ly: u64,
     pub lcd: usize,
     pub frame: Vec<u8>,
     pub vram: Vec<u8>,
-    interrupts: usize,
-    oam: Vec<u8>,
-    new_frame: bool,
+    pub interrupts: usize,
+    pub oam: Vec<Sprite>,
+    pub new_frame: bool,
     rom: Vec<u8>,
+    control: u8,
+    scroll_x: u8,
+    scroll_y: u8,
 }
 
 impl Gpu {
@@ -30,18 +33,114 @@ impl Gpu {
             lcd: 0x80,
             cycles: 0,
             ly: 0,
+            scroll_x: 0,
+            scroll_y: 0,
+            control: 0,
             interrupts: 0,
             frame: vec![0; 160 * 144],
             vram: vec![0; 0x2000],
-            oam: vec![0; 0xA0],
+            oam: vec![Sprite::new(); 0x40],
             new_frame: false,
             rom
         }
     }
 
-    // TODO;
-    // fn load(&self, address: u16) -> u8 { 0 }
-    // fn store(&mut self, address: u16, value: u8) {}
+    pub fn step(&mut self, cycles: u64, lcd_on: bool) {
+        self.cycles += cycles;
+        self.interrupts = 0;
+
+        match self.mode {
+            OamRead if self.cycles >= 80 => {
+                self.cycles -= 80;
+                self.set_mode(LcdTransfer)
+            }
+            LcdTransfer if self.cycles >= 172 => {
+                self.cycles -= 172;
+                if lcd_on {
+                    if self.control & 1 == 0 {
+                        self.clear_frame();
+                    }
+                    // TODO: render window or background
+                    self.render_sprites();
+                }
+                self.set_mode(HBlank)
+            }
+            HBlank if self.cycles >= 204 => {
+                self.cycles -= 204;
+                self.ly += 1;
+                if self.ly == 144 {
+                    self.interrupts = 1;
+                    self.new_frame = true;
+                    self.set_mode(VBlank);
+                } else {
+                    self.set_mode(OamRead);
+                }
+            }
+            VBlank if self.cycles >= 456 => {
+                self.cycles -= 456;
+                self.ly += 1;
+                if self.ly >= 154 {
+                    self.ly = 0;
+                    self.set_mode(OamRead);
+                }
+            }
+            _ => {}
+        }
+
+        // TODO: Compare ly and lyc and fire interrupt
+    }
+
+    fn render_sprites(&mut self) {
+        let sprite_height = 8; // TODO: 16 px sprites
+        let ly = self.ly as i16;
+
+        let mut n = 0;
+
+        while n < 156 {
+
+            let sprite = self.oam[n / 4];
+
+            let y = sprite.y as i16 - 16;
+            let x = sprite.x as i16 - 8;
+            let on_scanline = (y <= ly) && (y + sprite_height) > ly;
+
+            if on_scanline {
+                let y_offset = ly - y; // TODO: y-flip
+                let ptr = ((sprite.index * 16) + ((y_offset as u8) * 2)) as u16;
+                let lo = self.load(0x8000 + ptr);
+                let hi = self.load(0x8000 + ptr + 1);
+
+                for idx_x in 0..8 { // FIXME: check if it's inclusive
+                    let pixel_x = x + idx_x;
+                    if pixel_x >= 0 && pixel_x <= 160 {
+                        // TODO: X flip
+                        let bit = idx_x;
+                        let mut pixel = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
+                        if (lo >> bit) & 1 == 1 { pixel |= 1 };
+                        // TODO: palette number
+                        let palette_number = 0;
+                        let colors = self.sprite_palette(palette_number);
+                        let color = colors[pixel];
+                        // TODO: Check for existing pixels
+                        if pixel != 0 {
+                            self.set_pixel(pixel_x as u8, ly as u8, color)
+                        }
+                    }
+                }
+            }
+            n += 4
+        }
+    }
+
+    // FIXME: This may be super wasteful and constantly realloc
+    fn sprite_palette(&self, palette: u8) -> [u8; 4] {
+        [
+            0,
+            (palette >> 2) & 3,
+            (palette >> 4) & 3,
+            (palette >> 6) & 3,
+        ]
+    }
 
     fn set_mode(&mut self, mode: Mode) {
         let cleared = self.lcd & 0b1111_1100;
@@ -56,21 +155,75 @@ impl Gpu {
         self.mode = mode;
     }
 
-    pub fn step(&mut self, cycles: usize) {
-        let cycles = self.cycles + cycles;
-        self.interrupts = 0;
+    pub fn load(&self, address: u16) -> u8 {
+        if address < 0x8000 || address > 0x9FFF {
+            panic!(); // TODO: Fix this
+        }
 
-        match self.mode {
-            OamRead if cycles >= 80 => {
-                // TODO: mode = LcdTransfer
-            }
-            LcdTransfer if cycles >= 172 => {
-            }
-            HBlank if cycles >= 204 => {
-            }
-            VBlank if cycles >= 456 => {
-            }
-            _ => {}
+        self.vram[address as usize & 0x1FFF]
+    }
+
+    pub fn store(&mut self, address: u16, value: u8) {
+        if address < 0x8000 || address > 0x9FFF {
+            panic!(); // TODO: Fix this
+        }
+
+        self.vram[address as usize & 0x1FFF] = value;
+    }
+
+    pub fn oam_load(&self, address: u16) -> u8 {
+        let idx = (address / 4) as usize;
+        let attr = address % 4;
+        let sprite = self.oam[idx];
+        match attr {
+            0 => sprite.x,
+            1 => sprite.y,
+            2 => sprite.index,
+            3 => sprite.attrs,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn oam_store(&mut self, address: u16, value: u8) {
+        let idx = (address / 4) as usize;
+        let attr = address % 4;
+        let sprite = &mut self.oam[idx];
+        match attr {
+            0 => sprite.x = value,
+            1 => sprite.y = value,
+            2 => sprite.index = value,
+            3 => sprite.attrs = value,
+            _ => unreachable!(),
+        }
+    }
+
+    fn set_pixel(&mut self, x: u8, y: u8, color: u8) {
+        let offset = y * 160 + x;
+        self.frame[offset as usize] = color;
+    }
+
+    fn clear_frame(&mut self) {
+        for v in &mut self.frame {
+            *v = 0;
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Sprite {
+    x: u8,
+    y: u8,
+    index: u8,
+    attrs: u8
+}
+
+impl Sprite {
+    pub fn new() -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            index: 0,
+            attrs: 0,
         }
     }
 }
