@@ -22,7 +22,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (LdAR16(BC),     8,  "LD A, [BC]"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Inc(C),         4,  "INC C"),
-    (Dec(Register(C)),         4,  "DEC C"),
+    (Dec(Register(C)), 4,  "DEC C"),
     (LdN(C),         8,  "LD C, n"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // 1x
@@ -264,7 +264,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (XorD8,          8,  "XOR d8"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     // Fx
-    (LdReadIoN,     12, "LDH A, (FF00+n)"),
+    (LdReadIoN,     12,  "LDH A, (FF00+n)"),
     (Pop16(AF),     12,  "POP AF"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Di,             4,  "DI"),
