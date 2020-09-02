@@ -19,7 +19,7 @@ pub enum Storage {
 #[derive(Clone, Copy, Debug)]
 pub enum Instruction {
     Adc(Storage),
-    // Bit(u8, Storage),
+    Bit(u8, Storage),
     Add(Storage),
     AddHlR16(Register16),
     AddSpE8,
@@ -67,6 +67,7 @@ pub enum Instruction {
     Push16(Register16),
     Ret,
     Reti,
+    Res(u8, Storage),
     RetCond(Flag, bool),
     Rr(Storage),
     Rl(Storage),
@@ -79,6 +80,7 @@ pub enum Instruction {
     Rst(u16),
     Sbc(Storage),
     Scf,
+    Set(u8, Storage),
     Sla(Storage),
     Sra(Storage),
     Srl(Register8),
@@ -219,6 +221,13 @@ impl Cpu {
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::C, result > 0xFFFF);
             },
+            Bit(bit, s) => {
+                let a = self.load(s);
+                let z = (a >> bit) & 1 != 1;
+                self.registers.flag(Flag::Z, z);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, true);
+            }
             Call => {
                 self.do_call();
             },
@@ -438,6 +447,11 @@ impl Cpu {
                 self.memory.store16(sp, self.registers.get16(r));
                 self.registers.sp = sp;
             },
+            Res(bit, s) => {
+                let a = self.load(s);
+                let result = a & !(1 << bit);
+                self.store(s, result);
+            }
             Ret => {
                 let sp = self.registers.sp;
                 let pc = self.memory.load16(sp);
@@ -557,6 +571,11 @@ impl Cpu {
                 self.registers.set_flag(Flag::C);
                 self.registers.unset_flag(Flag::H);
                 self.registers.unset_flag(Flag::N);
+            }
+            Set(bit, s) => {
+                let a = self.load(s);
+                let result = a | (1 << bit);
+                self.store(s, result);
             }
             Sla(s) => {
                 let a = self.load(s);
