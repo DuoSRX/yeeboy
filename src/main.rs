@@ -13,7 +13,7 @@ use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
-use sdl2::pixels::Color;
+// use sdl2::pixels::Color;
 // use std::time::Duration;
 
 fn main() {
@@ -35,15 +35,15 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("rust-sdl2 demo: Video", 800, 600)
+    let window = video_subsystem.window("rust-sdl2 demo: Video", 480, 432)
         .position_centered()
+        .resizable()
         .opengl()
         .build()
         .map_err(|e| e.to_string())
         .unwrap();
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string()).unwrap();
-    canvas.set_draw_color(Color::RGB(255, 0, 0));
     canvas.clear();
     canvas.present();
 
@@ -66,8 +66,7 @@ fn main() {
         let prev_cy = cpu.cycles;
         cpu.step();
 
-        // let lcd_on = cpu.memory.load(0xFF40) & 0x80 > 0;
-        let lcd_on = true;
+        let lcd_on = cpu.memory.gpu.control & 0x80 > 0;
         cpu.memory.gpu.step(cpu.cycles - prev_cy, lcd_on);
 
         if cpu.memory.gpu.interrupts > 0 {
