@@ -236,9 +236,9 @@ impl Gpu {
     fn set_pixel(&mut self, x: u8, y: u8, color: u8) {
         let offset = y as usize * 160 + x as usize;
         let color = color as usize;
-        self.frame[offset] = COLOR_MAP[color].0;
-        self.frame[offset+1] = COLOR_MAP[color].1;
-        self.frame[offset+2] = COLOR_MAP[color].2;
+        self.frame[offset*3] = COLOR_MAP[color].0;
+        self.frame[offset*3+1] = COLOR_MAP[color].1;
+        self.frame[offset*3+2] = COLOR_MAP[color].2;
     }
 
     fn clear_frame(&mut self) {
