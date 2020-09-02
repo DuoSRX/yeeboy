@@ -61,11 +61,17 @@ pub enum Instruction {
     Ret,
     RetCond(Flag, bool),
     Rr(Storage),
+    Rl(Storage),
     Rla,
+    Rlc(Storage),
     Rlca,
     Rra, // RRA is the same as RR but has a different flag behaviour
+    Rrc(Storage),
+    Rrca,
     Sbc(Storage),
     Scf,
+    Sla(Storage),
+    Sra(Storage),
     Srl(Register8),
     Sub(Storage),
     Swap(Storage),
@@ -380,6 +386,16 @@ impl Cpu {
                 self.memory.store16(sp, self.registers.get16(r));
                 self.registers.sp = sp;
             },
+            Rl(s) => {
+                let a = self.load(s);
+                let prev_carry = self.registers.has_flag(Flag::C);
+                let result = if prev_carry { (a << 1) | 1 } else { a << 1 } & 0xFF;
+                self.store(s, result);
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, a & 0x80 > 0);
+            },
             Rla => {
                 let a = self.registers.a;
                 let prev_carry = self.registers.has_flag(Flag::C) as u8;
@@ -390,6 +406,17 @@ impl Cpu {
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);
                 self.registers.flag(Flag::C, c == 1);
+            },
+            Rlc(s) => {
+                let a = self.load(s);
+                let c = a & 0x80 > 0;
+                let a = (a << 1) & 0xFF;
+                let a = if c { a | 1 } else { a };
+                self.store(s, a);
+                self.registers.flag(Flag::Z, a == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, c);
             },
             Rlca => {
                 let a = self.registers.a;
@@ -422,6 +449,26 @@ impl Cpu {
                 self.registers.flag(Flag::H, false);
                 self.registers.flag(Flag::C, (a & 1) == 1);
             },
+            Rrc(s) => {
+                let a = self.load(s);
+                let c = a & 1;
+                let value = (c << 7) | (a >> 1);
+                self.store(s, value);
+                self.registers.flag(Flag::Z, value == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, c == 1);
+            },
+            Rrca => {
+                let a = self.registers.a;
+                let c = a & 1;
+                let value = (c << 7) | (a >> 1);
+                self.registers.a = value;
+                self.registers.flag(Flag::Z, false);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, c == 1);
+            },
             Ret => {
                 let sp = self.registers.sp;
                 let pc = self.memory.load16(sp);
@@ -446,6 +493,24 @@ impl Cpu {
                 self.registers.unset_flag(Flag::H);
                 self.registers.unset_flag(Flag::N);
             }
+            Sla(s) => {
+                let a = self.load(s);
+                let result = (a << 1) & 0xFF;
+                self.store(s, result);
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, a & 0x80 > 1);
+            },
+            Sra(s) => {
+                let a = self.load(s);
+                let result = (a >> 1) | (a & 0x80);
+                self.store(s, result);
+                self.registers.flag(Flag::Z, result == 0);
+                self.registers.flag(Flag::N, false);
+                self.registers.flag(Flag::H, false);
+                self.registers.flag(Flag::C, a & 1 == 1);
+            },
             Srl(r) => {
                 let a = self.registers.get(r);
                 let result = a >> 1;
