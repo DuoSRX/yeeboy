@@ -188,7 +188,7 @@ impl Cpu {
                 let a = self.registers.get16(r) as u32;
                 let result = hl + a;
                 let h = (hl & 0xFFF) + (a & 0xFFF) > 0xFFF;
-                self.registers.set16(r, (result & 0xFFFF) as u16);
+                self.registers.set16(HL, (result & 0xFFFF) as u16);
                 self.registers.flag(Flag::H, h);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::C, result > 0xFFFF);
@@ -351,10 +351,6 @@ impl Cpu {
                 let sp = self.registers.sp.wrapping_add(2);
                 self.registers.set16(AF, af);
                 self.registers.set16(SP, sp);
-                self.registers.flag(Flag::C, af & 0x10 > 0);
-                self.registers.flag(Flag::H, af & 0x20 > 0);
-                self.registers.flag(Flag::N, af & 0x40 > 0);
-                self.registers.flag(Flag::Z, af & 0x80 > 0);
             },
             Pop16(r) => {
                 let value = self.memory.load16(self.registers.sp);
