@@ -12,14 +12,15 @@ pub struct Memory  {
 
 impl Memory {
     pub fn new(cartridge: Cartridge) -> Self {
-        let gpu = Gpu::new();
+        // TODO: Share a reference instead of cloning the entire rom
+        let gpu = Gpu::new(cartridge.rom.clone());
         Self {
             work_ram: vec![0; 0x2000], // 8 kB of RAM
             high_ram: vec![0; 0x80],   // Mapped from 0xFF80 to 0xFFF
             io: vec![0; 0x80],
             serial: vec![],
-            gpu,
             cartridge,
+            gpu,
         }
     }
 
