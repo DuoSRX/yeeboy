@@ -33,6 +33,7 @@ pub enum Instruction {
     Dec(Storage),
     Dec16(Register16),
     Di,
+    Ei,
     Inc(Storage),
     Inc16(Register16),
     Jp,
@@ -58,6 +59,7 @@ pub enum Instruction {
     LdRR(Register8, Register8),
     LdSp,
     LdSpHl,
+    LdWriteIoC,
     LdWriteIoN,
     NOP,
     Or(Storage),
@@ -277,6 +279,7 @@ impl Cpu {
                 self.registers.flag(Flag::C, result & 0x60 != 0);
             }
             Di => self.ime = false,
+            Ei => self.ime = true,
             Inc(s @ Storage::Pointer(HL)) => {
                 let a = self.load(s);
                 let result = a.wrapping_add(1);
@@ -403,6 +406,11 @@ impl Cpu {
             },
             LdSpHl => {
                 self.registers.sp = self.registers.get16(HL);
+            },
+            LdWriteIoC => {
+                let n = self.registers.c as u16;
+                let address = n.wrapping_add(0xFF00);
+                self.memory.store(address, self.registers.a);
             },
             LdWriteIoN => {
                 let n = self.load_and_bump_pc() as u16;

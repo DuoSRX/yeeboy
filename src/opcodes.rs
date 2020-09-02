@@ -249,7 +249,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     // Ex
     (LdWriteIoN,    12,  "LDH (FF00+n), A"),
     (Pop16(HL),     12,  "POP HL"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdWriteIoC,    12,  "LD (FF00+C), A"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Push16(HL),    16,  "PUSH HL"),
@@ -275,7 +275,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (LdHlSpE8,      12,  "LD HL, sp+e8"),
     (LdSpHl,         8,  "LD SP, HL"),
     (LdAA16,        16,  "LD A,(a16)"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (Ei,             4,  "EI"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Cp(NextByte),   8,  "CP n"),
