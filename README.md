@@ -31,7 +31,7 @@ Heavily WIP. Nothing work. Literally nothing is useable. Go away. SHOO
 * [ ] 03-op_sp_hl
 * [ ] 04-op_r_imm
 * [ ] 05-op_rp
-* [ ] 06-ld_r_r
+* [x] ~~06-ld_r_r~~
 * [ ] 07-jr_jp_call_ret_rst
 * [ ] 08-misc_instrs
 * [ ] 09-op_r_r
