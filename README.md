@@ -9,18 +9,21 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 
 * [x] Basic architecture and organization
 * [ ] CPU Instructions
-  * Still missing a whole bunch of instructions
-  * CB Instructions (ugh)
+  * [ ] Still missing some (check opcodes.rs)
+  * [x] ~~CB Instructions~~
 * [ ] Timers
 * [ ] Interrupts
 * [ ] GPU
+  * [x] ~~Background~~
+  * [ ] Sprites
+  * [ ] Windows
 * [ ] Cartridges
   * [x] ROM
   * [ ] Headers
   * [ ] MBC
 * [ ] Graphics
-  * [ ] SDL Frontend
-  * [ ] WASM in Browser
+  * [x] ~~SDL Frontend~~
+  * [ ] WASM in browser
 * [ ] Controllers
 * [ ] CLI flags
 * [ ] Audio
@@ -40,5 +43,13 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 * [x] ~~07-jr_jp_call_ret_rst~~
 * [ ] 08-misc_instrs
 * [x] ~~09-op_r_r~~
-* [ ] 10-bit_ops
+* [x] ~~10-bit_ops~~
 * [ ] 11-op_a_hl
+
+## Games that boot
+
+* Dr Mario
+
+## Games that work
+
+NONE :(
