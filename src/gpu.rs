@@ -24,6 +24,7 @@ pub struct Gpu {
     pub ly: u8,
     pub lcd: u8,
     pub frame: Vec<u8>,
+    pub frame_count: u64,
     pub vram: Vec<u8>,
     pub interrupts: u8,
     pub oam: Vec<Sprite>,
@@ -42,6 +43,7 @@ impl Gpu {
             mode: HBlank,
             lcd: 0x80,
             cycles: 0,
+            frame_count: 0,
             ly: 0,
             scroll_x: 0,
             scroll_y: 0,
@@ -142,7 +144,7 @@ impl Gpu {
     }
 
     fn render_sprites(&mut self) {
-        let sprite_height = 8; // TODO: 16 px sprites
+        let sprite_height = if self.control & 4 > 0 { 16 } else { 8 };
         let ly = self.ly as i16;
 
         let mut n = 0;
