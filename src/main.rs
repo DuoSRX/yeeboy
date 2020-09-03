@@ -54,7 +54,7 @@ fn main() {
     canvas.present();
 
     let tex_creator = canvas.texture_creator();
-    let mut texture = tex_creator.create_texture_target(PixelFormatEnum::BGR24, 160, 144).unwrap();
+    let mut texture = tex_creator.create_texture_target(PixelFormatEnum::RGB24, 160, 144).unwrap();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
