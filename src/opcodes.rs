@@ -11,7 +11,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     // 0x
     (NOP,            4,  "NOP"),
     (LdNN(BC),       12, "LD BC, nn"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdR16A(BC),     8,  "LD [BC], A"),
     (Inc16(BC),      8,  "INC BC"),
     (Inc(Register(B)),         4,  "INC B"),
     (Dec(Register(B)), 4,  "DEC B"),
