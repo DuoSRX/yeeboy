@@ -139,14 +139,14 @@ impl Cpu {
             0xCB => {
                 let opcode = self.memory.load(self.pc + 1);
                 let (instruction, cycles, descr) = Self::decode_cb(opcode);
-                println!("{}", self.trace(descr));
+                // println!("{}", self.trace(descr));
                 self.pc += 2;
                 self.execute(instruction);
                 cycles
             }
             opcode => {
                 let (instruction, cycles, descr) = Self::decode(opcode);
-                println!("{}", self.trace(descr));
+                // println!("{}", self.trace(descr));
                 self.pc += 1;
                 self.execute(instruction);
                 cycles
