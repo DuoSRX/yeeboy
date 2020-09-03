@@ -6,6 +6,7 @@ pub mod gpu;
 pub mod opcodes;
 pub mod memory;
 pub mod register;
+pub mod timer;
 
 use std::fs::File;
 
@@ -38,12 +39,18 @@ fn main() {
     let window = video_subsystem.window("rust-sdl2 demo: Video", 480, 432)
         .position_centered()
         .resizable()
+        .allow_highdpi()
         .opengl()
         .build()
         .map_err(|e| e.to_string())
         .unwrap();
 
-    let mut canvas = window.into_canvas().build().map_err(|e| e.to_string()).unwrap();
+    let mut canvas = window
+        .into_canvas()
+        .build()
+        .map_err(|e| e.to_string())
+        .unwrap();
+
     canvas.clear();
     canvas.present();
 
@@ -64,17 +71,21 @@ fn main() {
         // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 30));
 
         let prev_cy = cpu.cycles;
-        cpu.step();
+        if cpu.halted {
+            cpu.cycles += 4;
+        } else {
+            cpu.step();
+        }
+        let elapsed = cpu.cycles - prev_cy;
 
-        let lcd_on = cpu.memory.gpu.control & 0x80 > 0;
-        cpu.memory.gpu.step(cpu.cycles - prev_cy, lcd_on);
-
-        if cpu.memory.gpu.interrupts > 0 {
-            // TODO: Gpu Interrupts
+        let timer_int = cpu.memory.timer.tick(elapsed / 4);
+        if timer_int {
+            cpu.request_interrupt(4);
         }
 
-        // TODO: Cpu interrupts
-        // TODO: Check for new frame & lcd_on
+        let lcd_on = cpu.memory.gpu.control & 0x80 > 0;
+        cpu.memory.gpu.step(elapsed, lcd_on);
+
         if cpu.memory.gpu.new_frame && lcd_on {
             texture.update(None, &cpu.memory.gpu.frame, 160 * 3).unwrap();
             canvas.clear();
@@ -91,7 +102,8 @@ fn main() {
         cpu.interrupt();
 
         if !cpu.memory.serial.is_empty() {
-            print!("{}", cpu.memory.serial.remove(0));
+            let c = cpu.memory.serial.remove(0);
+            print!("{}", c);
         }
     }
 }

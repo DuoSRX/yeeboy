@@ -1,4 +1,5 @@
 use crate::cartridge::Cartridge;
+use crate::timer::Timer;
 use crate::gpu::Gpu;
 
 pub struct Memory  {
@@ -8,6 +9,7 @@ pub struct Memory  {
     io: Vec<u8>,
     pub serial: Vec<char>, // for debugging only
     pub gpu: Gpu,
+    pub timer: Timer,
 }
 
 impl Memory {
@@ -19,6 +21,7 @@ impl Memory {
             high_ram: vec![0; 0x80],   // Mapped from 0xFF80 to 0xFFF
             io: vec![0; 0x80],
             serial: vec![],
+            timer: Timer::new(),
             cartridge,
             gpu,
         }
@@ -32,7 +35,10 @@ impl Memory {
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],
             0xFE00..=0xFE9F => 0, // TODO: OAM
             0xFEA0..=0xFEFF => 0, // No-op
-            0xFF06..=0xFF06 => { dbg!("Timer read"); 0 }
+            0xFF04 => self.timer.div,
+            0xFF05 => self.timer.tima,
+            0xFF06 => self.timer.tma,
+            0xFF07 => self.timer.tac,
             0xFF40 => self.gpu.control,
             0xFF42 => self.gpu.scroll_y,
             0xFF43 => self.gpu.scroll_x,
@@ -58,7 +64,10 @@ impl Memory {
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
             0xFE00..=0xFE9F => self.gpu.oam_store(address - 0xFE00, value),
             0xFEA0..=0xFEFF => {} // No-op
-            0xFF06..=0xFF06 => { dbg!("Timer write", address, value); }
+            0xFF04 => self.timer.div = value,
+            0xFF05 => self.timer.tima = value,
+            0xFF06 => self.timer.tma = value,
+            0xFF07 => self.timer.tac = value,
             0xFF40 => self.gpu.control = value,
             0xFF42 => self.gpu.scroll_y = value,
             0xFF43 => self.gpu.scroll_x = value,
