@@ -25,6 +25,8 @@ pub struct Gpu {
     pub scroll_x: u8,
     pub scroll_y: u8,
     pub bg_palette: u8,
+    pub obj_palette_0: u8,
+    pub obj_palette_1: u8,
 }
 
 impl Gpu {
@@ -39,6 +41,8 @@ impl Gpu {
             control: 0,
             interrupts: 0,
             bg_palette: 0,
+            obj_palette_0: 0,
+            obj_palette_1: 0,
             frame: vec![0xFF; 160 * 144 * 3],
             vram: vec![0; 0x2000],
             oam: vec![Sprite::new(); 0x40],
@@ -65,7 +69,7 @@ impl Gpu {
                         self.clear_frame();
                     }
                     // TODO: render window
-                    // self.render_sprites();
+                    self.render_sprites();
                 }
                 self.set_mode(HBlank)
             }
@@ -156,7 +160,7 @@ impl Gpu {
                         let mut pixel = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
                         if (lo >> bit) & 1 == 1 { pixel |= 1 };
                         // TODO: palette number
-                        let palette_number = 0;
+                        let palette_number = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
                         let colors = self.sprite_palette(palette_number);
                         let color = colors[pixel];
                         // TODO: Check for existing pixels
@@ -233,6 +237,7 @@ impl Gpu {
             3 => sprite.attrs = value,
             _ => unreachable!(),
         }
+        // dbg!(sprite);
     }
 
     fn set_pixel(&mut self, x: u8, y: u8, color: u8) {
