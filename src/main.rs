@@ -9,13 +9,12 @@ pub mod register;
 pub mod timer;
 
 use std::fs::File;
+// use std::time::Duration;
 
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-
 // use sdl2::pixels::Color;
-// use std::time::Duration;
 
 fn main() {
     // let mut file = File::open("roms/tetris.gb").unwrap();
@@ -68,14 +67,9 @@ fn main() {
                 _ => {}
             }
         }
-        // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 30));
 
         let prev_cy = cpu.cycles;
-        if cpu.halted {
-            cpu.cycles += 4;
-        } else {
-            cpu.step();
-        }
+        cpu.step();
         let elapsed = cpu.cycles - prev_cy;
 
         let timer_int = cpu.memory.timer.tick(elapsed / 4);
@@ -92,6 +86,7 @@ fn main() {
             canvas.copy(&texture, None, None).unwrap();
             canvas.present();
             cpu.memory.gpu.new_frame = false;
+            // ::std::thread::sleep(Duration::from_secs_f64( 1.0 / 60.0));
         }
 
         if cpu.memory.gpu.interrupts > 0 {

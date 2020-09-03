@@ -128,7 +128,12 @@ impl Cpu {
     // - Decode the instruction
     // - Execute the instruction
     // - Increment the cycle count
+    #[allow(unused_variables)]
     pub fn step(&mut self) {
+        if self.halted {
+            return self.cycles += 4;
+        }
+
         // TODO: Fix this ugly duplication. Too lazy right now
         let cycles = match self.load_byte() {
             0xCB => {
