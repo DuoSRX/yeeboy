@@ -3,6 +3,10 @@ use crate::memory::Memory;
 use crate::opcodes::*;
 use crate::register::{Flag, Registers, Register8, Register16, Register16::*};
 
+static INTERRUPT_FLAG: u16 = 0xFF0F;
+static INTERRUPT_ENABLE: u16 = 0xFFFF;
+static INTERRUPT_VECTORS: [u16; 5] = [0x40, 0x48, 0x50, 0x58, 0x60];
+
 // TODO: Expand this to other types of operation, like nn, d8...etc
 // This would cut out drastically on the duplication in some ops
 // See for instance: xor d8, xor hl, xor
@@ -762,6 +766,38 @@ impl Cpu {
         self.registers.flag(Flag::H, false);
         self.registers.flag(Flag::N, false);
         self.registers.flag(Flag::Z, result == 0);
+    }
+
+    pub fn is_interrupt_enabled(&mut self, n: u8) -> bool {
+        self.memory.load(INTERRUPT_ENABLE) & (1 << n) != 0
+    }
+
+    pub fn request_interrupt(&mut self, n: u8) {
+        let isf = self.memory.load(INTERRUPT_FLAG);
+        self.memory.store(INTERRUPT_FLAG, isf | n);
+    }
+
+    pub fn interrupt(&mut self) {
+        self.halted = false;
+        if self.ime {
+            self.check_interrupts(0);
+        }
+    }
+
+    fn check_interrupts(&mut self, n: u8) {
+        let if_val = self.memory.load(INTERRUPT_FLAG);
+
+        if if_val & (1 << n) != 0 && self.is_interrupt_enabled(n) {
+            let if_val = if_val & !(1 << n);
+            self.memory.store(INTERRUPT_FLAG, if_val);
+            let sp = self.registers.sp.wrapping_sub(2);
+            self.memory.store16(sp, self.pc);
+            self.registers.sp = sp;
+            self.ime = false;
+            self.pc = INTERRUPT_VECTORS[n as usize];
+        } else if n != 4 {
+            self.check_interrupts(n + 1);
+        }
     }
 }
 

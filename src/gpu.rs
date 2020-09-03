@@ -18,7 +18,7 @@ pub struct Gpu {
     pub lcd: u8,
     pub frame: Vec<u8>,
     pub vram: Vec<u8>,
-    pub interrupts: usize,
+    pub interrupts: u8,
     pub oam: Vec<Sprite>,
     pub new_frame: bool,
     pub control: u8,
@@ -148,7 +148,7 @@ impl Gpu {
 
             if on_scanline {
                 let y_offset = ly - y; // TODO: y-flip
-                let ptr = ((sprite.index * 16) + ((y_offset as u8) * 2)) as u16;
+                let ptr = ((sprite.index as i32 * 16) + ((y_offset as i32) * 2)) as u16;
                 let lo = self.load(0x8000 + ptr);
                 let hi = self.load(0x8000 + ptr + 1);
 
@@ -159,7 +159,6 @@ impl Gpu {
                         let bit = idx_x;
                         let mut pixel = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
                         if (lo >> bit) & 1 == 1 { pixel |= 1 };
-                        // TODO: palette number
                         let palette_number = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
                         let colors = self.sprite_palette(palette_number);
                         let color = colors[pixel];
