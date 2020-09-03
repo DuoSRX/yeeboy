@@ -55,14 +55,16 @@ impl Memory {
             0x8000..=0x9FFF => self.gpu.store(address, value),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize] = value,
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
-            0xFE00..=0xFE9F => self.gpu.oam_store(address & 0x9F, value),
+            0xFE00..=0xFE9F => self.gpu.oam_store(address - 0xFE00, value),
             0xFEA0..=0xFEFF => {} // No-op
             0xFF40 => self.gpu.control = value,
             0xFF42 => self.gpu.scroll_y = value,
             0xFF43 => self.gpu.scroll_x = value,
             0xFF44 => self.gpu.ly = 0,
-            0xFF46 => { dbg!("DMA"); }, // TODO
+            0xFF46 => { panic!("DMA"); }, // TODO
             0xFF47 => self.gpu.bg_palette = value,
+            0xFF48 => self.gpu.obj_palette_0 = value,
+            0xFF49 => self.gpu.obj_palette_1 = value,
             0xFF00..=0xFF7F => self.io[address as usize - 0xFF00] = value,
             0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80] = value,
             _ => unimplemented!("Storing {:02X} @ {:04X}", value, address),
