@@ -168,10 +168,8 @@ impl Gpu {
                         let bit = idx_x;
                         let mut pixel = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
                         if (lo >> bit) & 1 == 1 { pixel |= 1 };
-                        let palette_number = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
-                        let colors = self.sprite_palette(palette_number);
-                        let color = colors[pixel];
-                        // TODO: Check for existing pixels
+                        let palette = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
+                        let color = (palette >> (palette * 2)) & 3;
                         if pixel != 0 {
                             self.set_pixel(pixel_x as u8, ly as u8, color)
                         }
@@ -180,16 +178,6 @@ impl Gpu {
             }
             n += 4
         }
-    }
-
-    // FIXME: This may be super wasteful and constantly realloc
-    fn sprite_palette(&self, palette: u8) -> [u8; 4] {
-        [
-            0,
-            (palette >> 2) & 3,
-            (palette >> 4) & 3,
-            (palette >> 6) & 3,
-        ]
     }
 
     fn set_mode(&mut self, mode: Mode) {
