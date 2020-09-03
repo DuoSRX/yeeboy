@@ -165,12 +165,13 @@ impl Gpu {
                     let pixel_x = x + idx_x;
                     if pixel_x >= 0 && pixel_x <= 160 {
                         // TODO: X flip
-                        let bit = idx_x;
+                        let mut bit = idx_x;
+                        if sprite.x_flip() { bit = 7 - bit };
                         let mut pixel = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
                         if (lo >> bit) & 1 == 1 { pixel |= 1 };
                         let palette = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
                         let color = (palette >> (palette * 2)) & 3;
-                        if pixel != 0 {
+                        if pixel != 0 && sprite.attrs & 0x80 == 0 {
                             self.set_pixel(pixel_x as u8, ly as u8, color)
                         }
                     }
@@ -214,8 +215,8 @@ impl Gpu {
         let attr = address % 4;
         let sprite = self.oam[idx];
         match attr {
-            0 => sprite.x,
-            1 => sprite.y,
+            0 => sprite.y,
+            1 => sprite.x,
             2 => sprite.index,
             3 => sprite.attrs,
             _ => unreachable!(),
@@ -227,8 +228,8 @@ impl Gpu {
         let attr = address % 4;
         let sprite = &mut self.oam[idx];
         match attr {
-            0 => sprite.x = value,
-            1 => sprite.y = value,
+            0 => sprite.y = value,
+            1 => sprite.x = value,
             2 => sprite.index = value,
             3 => sprite.attrs = value,
             _ => unreachable!(),
@@ -281,5 +282,13 @@ impl Sprite {
             index: 0,
             attrs: 0,
         }
+    }
+
+    pub fn x_flip(&self) -> bool {
+        self.attrs & 0x20 != 0
+    }
+
+    pub fn y_flip(&self) -> bool {
+        self.attrs & 0x40 != 0
     }
 }
