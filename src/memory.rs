@@ -32,6 +32,7 @@ impl Memory {
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],
             0xFE00..=0xFE9F => 0, // TODO: OAM
             0xFEA0..=0xFEFF => 0, // No-op
+            0xFF06..=0xFF06 => { dbg!("Timer read"); 0 }
             0xFF40 => self.gpu.control,
             0xFF42 => self.gpu.scroll_y,
             0xFF43 => self.gpu.scroll_x,
@@ -57,11 +58,18 @@ impl Memory {
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
             0xFE00..=0xFE9F => self.gpu.oam_store(address - 0xFE00, value),
             0xFEA0..=0xFEFF => {} // No-op
+            0xFF06..=0xFF06 => { dbg!("Timer write", address, value); }
             0xFF40 => self.gpu.control = value,
             0xFF42 => self.gpu.scroll_y = value,
             0xFF43 => self.gpu.scroll_x = value,
             0xFF44 => self.gpu.ly = 0,
-            0xFF46 => { panic!("DMA"); }, // TODO
+            0xFF46 => { // OAM DMA
+                let start = (value as u16) << 8;
+                for offset in 0..0xA0 {
+                    let byte = self.load(start + offset);
+                    self.gpu.oam_store(offset, byte);
+                }
+            }
             0xFF47 => self.gpu.bg_palette = value,
             0xFF48 => self.gpu.obj_palette_0 = value,
             0xFF49 => self.gpu.obj_palette_1 = value,

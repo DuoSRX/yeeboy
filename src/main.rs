@@ -83,6 +83,13 @@ fn main() {
             cpu.memory.gpu.new_frame = false;
         }
 
+        if cpu.memory.gpu.interrupts > 0 {
+            cpu.request_interrupt(cpu.memory.gpu.interrupts);
+            cpu.memory.gpu.interrupts = 0;
+        }
+
+        cpu.interrupt();
+
         if !cpu.memory.serial.is_empty() {
             print!("{}", cpu.memory.serial.remove(0));
         }
