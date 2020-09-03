@@ -61,14 +61,6 @@ fn main() {
     let mut now = std::time::Instant::now();
 
     'running: loop {
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'running
-                },
-                _ => {}
-            }
-        }
 
         let prev_cy = cpu.cycles;
         cpu.step();
@@ -89,6 +81,21 @@ fn main() {
             canvas.present();
             cpu.memory.gpu.new_frame = false;
             cpu.memory.gpu.frame_count += 1;
+
+            // This should be outside of the new_frame condition but due to
+            // a perf regression in SDL 2.0.9 we have to leave it here to
+            // prevent horribly slow polling performance. Meh.
+            for event in event_pump.poll_iter() {
+                match event {
+                    Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                        break 'running
+                    },
+                    _ => {}
+                }
+            }
+
+            ::std::thread::sleep(std::time::Duration::from_secs_f64(1.0/40.0));
+
             if now.elapsed().as_secs() > 1 {
                 canvas
                     .window_mut()
@@ -97,7 +104,6 @@ fn main() {
                 cpu.memory.gpu.frame_count = 0;
                 now = std::time::Instant::now();
             }
-            // ::std::thread::sleep(std::time::Duration::from_secs_f64( 1.0 / 60.0));
         }
 
         if cpu.memory.gpu.interrupts > 0 {
