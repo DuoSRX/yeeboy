@@ -35,7 +35,7 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("rust-sdl2 demo: Video", 480, 432)
+    let window = video_subsystem.window("YeeBoy", 480, 432)
         .position_centered()
         .resizable()
         .allow_highdpi()
@@ -57,6 +57,8 @@ fn main() {
     let mut texture = tex_creator.create_texture_target(PixelFormatEnum::RGB24, 160, 144).unwrap();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
+
+    let mut now = std::time::Instant::now();
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -86,7 +88,16 @@ fn main() {
             canvas.copy(&texture, None, None).unwrap();
             canvas.present();
             cpu.memory.gpu.new_frame = false;
-            // ::std::thread::sleep(Duration::from_secs_f64( 1.0 / 60.0));
+            cpu.memory.gpu.frame_count += 1;
+            if now.elapsed().as_secs() > 1 {
+                canvas
+                    .window_mut()
+                    .set_title(&format!("YeeBoy - {} FPS", cpu.memory.gpu.frame_count))
+                    .unwrap();
+                cpu.memory.gpu.frame_count = 0;
+                now = std::time::Instant::now();
+            }
+            // ::std::thread::sleep(std::time::Duration::from_secs_f64( 1.0 / 60.0));
         }
 
         if cpu.memory.gpu.interrupts > 0 {
@@ -96,9 +107,9 @@ fn main() {
 
         cpu.interrupt();
 
-        if !cpu.memory.serial.is_empty() {
-            let c = cpu.memory.serial.remove(0);
-            print!("{}", c);
-        }
+        // if !cpu.memory.serial.is_empty() {
+        //     let c = cpu.memory.serial.remove(0);
+        //     print!("{}", c);
+        // }
     }
 }
