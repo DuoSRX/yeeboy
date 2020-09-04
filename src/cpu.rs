@@ -502,7 +502,7 @@ impl Cpu {
             Rl(s) => {
                 let a = self.load(s);
                 let prev_carry = self.registers.has_flag(Flag::C);
-                let result = if prev_carry { (a << 1) | 1 } else { a << 1 } & 0xFF;
+                let result = if prev_carry { (a << 1) | 1 } else { a << 1 };
                 self.store(s, result);
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
@@ -523,7 +523,7 @@ impl Cpu {
             Rlc(s) => {
                 let a = self.load(s);
                 let c = a & 0x80 > 0;
-                let a = (a << 1) & 0xFF;
+                let a = a << 1;
                 let a = if c { a | 1 } else { a };
                 self.store(s, a);
                 self.registers.flag(Flag::Z, a == 0);
@@ -534,7 +534,7 @@ impl Cpu {
             Rlca => {
                 let a = self.registers.a;
                 let c = a & 0x80 > 0;
-                let a = (a << 1) & 0xFF;
+                let a = a << 1;
                 let a = if c { a | 1 } else { a };
                 self.registers.a = a;
                 self.registers.flag(Flag::Z, false);
@@ -604,7 +604,7 @@ impl Cpu {
             }
             Sla(s) => {
                 let a = self.load(s);
-                let result = (a << 1) & 0xFF;
+                let result = a << 1;
                 self.store(s, result);
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);

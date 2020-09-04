@@ -10,7 +10,7 @@ use crate::register::{Flag, Register8::*, Register16::*};
 // Tuple format: (Instruction, number of cycles, human readable string)
 // Does not include the CB instructions which will be stored in a different array.
 // Idea: what if instead of the enum, the first item as fn(&mut cpu) -> () ?
-pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
+pub static OPCODES: [(Instruction, u64, &str); 0x100] = [
     // 0x
     (NOP,            4,  "NOP"),
     (LdNN(BC),       12, "LD BC, nn"),
@@ -285,7 +285,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Rst(0x38),     16,  "RST 38H"),
 ];
 
-pub static CB_OPCODES: [(Instruction, u64, &'static str); 0x100] = [
+pub static CB_OPCODES: [(Instruction, u64, &str); 0x100] = [
     // 0x
     (Rlc(Register(B)), 8,  "RLC B"),
     (Rlc(Register(C)), 8,  "RLC C"),
