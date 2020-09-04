@@ -1,6 +1,7 @@
 use crate::cartridge::Cartridge;
-use crate::timer::Timer;
 use crate::gpu::Gpu;
+use crate::input::Input;
+use crate::timer::Timer;
 
 pub struct Memory  {
     cartridge: Cartridge, // TODO: Replace with MBC
@@ -10,6 +11,7 @@ pub struct Memory  {
     pub serial: Vec<char>, // for debugging only
     pub gpu: Gpu,
     pub timer: Timer,
+    pub input: Input,
 }
 
 impl Memory {
@@ -22,6 +24,7 @@ impl Memory {
             io: vec![0; 0x80],
             serial: vec![],
             timer: Timer::new(),
+            input: Input::new(),
             cartridge,
             gpu,
         }
@@ -35,7 +38,7 @@ impl Memory {
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],
             0xFE00..=0xFE9F => 0, // TODO: OAM
             0xFEA0..=0xFEFF => 0, // No-op
-            0xFF00 => 0xFF, // TODO: Remove hardcoded input
+            0xFF00 => self.input.get(),
             0xFF04 => self.timer.div,
             0xFF05 => self.timer.tima,
             0xFF06 => self.timer.tma,
@@ -59,7 +62,6 @@ impl Memory {
     pub fn store(&mut self, address: u16, value: u8) {
         if address == 0xFF01 {
             unsafe { self.serial.push(std::char::from_u32_unchecked(value as u32)) }
-            // unsafe { dbg!(std::char::from_u32_unchecked(value as u32)) };
             return
         }
         match address {
@@ -70,7 +72,7 @@ impl Memory {
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
             0xFE00..=0xFE9F => self.gpu.oam_store(address - 0xFE00, value),
             0xFEA0..=0xFEFF => {} // No-op
-            0xFF00 => {} // TODO: Input
+            0xFF00 => self.input.set(value),
             0xFF04 => self.timer.div = value,
             0xFF05 => self.timer.tima = value,
             0xFF06 => self.timer.tma = value,
