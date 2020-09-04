@@ -38,12 +38,13 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 
 * [x] ~~01-special~~
 * [ ] 02-interrupts
+  * Everything passes except Timer #4
 * [x] ~~03-op_sp_hl~~
 * [x] ~~04-op_r_imm~~
 * [x] ~~05-op_rp~~
 * [x] ~~06-ld_r_r~~
 * [x] ~~07-jr_jp_call_ret_rst~~
-* [ ] 08-misc_instrs
+* [x] ~~08-misc_instrs~~
 * [x] ~~09-op_r_r~~
 * [x] ~~10-bit_ops~~
 * [ ] 11-op_a_hl

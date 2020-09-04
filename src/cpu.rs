@@ -60,6 +60,7 @@ pub enum Instruction {
     LdN(Register8),
     LdNN(Register16),
     LdR16A(Register16),
+    LdReadIoC,
     LdReadIoN,
     LdRR(Register8, Register8),
     LdSp,
@@ -414,6 +415,11 @@ impl Cpu {
             LdR16A(r) => {
                 let address = self.registers.get16(r);
                 self.memory.store(address, self.registers.a);
+            },
+            LdReadIoC => {
+                let n = self.registers.c as u16;
+                let byte = self.memory.load(n.wrapping_add(0xFF00));
+                self.registers.a = byte;
             },
             LdReadIoN => {
                 let n = self.load_and_bump_pc() as u16;

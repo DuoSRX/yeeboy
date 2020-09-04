@@ -266,7 +266,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     // Fx
     (LdReadIoN,     12,  "LDH A, (FF00+n)"),
     (Pop16(AF),     12,  "POP AF"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LdReadIoC,     12,  "LD A, (FF00+C)"),
     (Di,             4,  "DI"),
     (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
     (Push16(AF),    16,  "PUSH AF"),
