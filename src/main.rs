@@ -3,6 +3,7 @@
 pub mod cartridge;
 pub mod cpu;
 pub mod gpu;
+pub mod input;
 pub mod opcodes;
 pub mod memory;
 pub mod register;
@@ -17,15 +18,18 @@ use sdl2::keyboard::Keycode;
 
 fn main() {
     // let mut file = File::open("roms/tetris.gb").unwrap();
-    // let mut file = File::open("roms/drmario.gb").unwrap();
+    let mut file = File::open("roms/drmario.gb").unwrap();
     // let mut file = File::open("roms/01-special.gb").unwrap();
+    // let mut file = File::open("roms/02-interrupts.gb").unwrap();
     // let mut file = File::open("roms/03-op_sp_hl.gb").unwrap();
     // let mut file = File::open("roms/04-op_r_imm.gb").unwrap();
     // let mut file = File::open("roms/05-op_rp.gb").unwrap();
     // let mut file = File::open("roms/06-ld_r_r.gb").unwrap();
-    let mut file = File::open("roms/07-jr_jp_call_ret_rst.gb").unwrap();
+    // let mut file = File::open("roms/07-jr_jp_call_ret_rst.gb").unwrap();
     // let mut file = File::open("roms/08-misc_instrs.gb").unwrap();
     // let mut file = File::open("roms/09-op_r_r.gb").unwrap();
+    // let mut file = File::open("roms/10-bit_ops.gb").unwrap();
+    // let mut file = File::open("roms/11-op_a_hl.gb").unwrap();
     let cartridge = cartridge::Cartridge::load(&mut file);
     dbg!(&cartridge.headers);
 
@@ -88,11 +92,21 @@ fn main() {
                     Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                         break 'running
                     },
+                    Event::KeyDown { keycode: Some(keycode), .. } => {
+                        if let Some(button) = keycode_to_button(keycode) {
+                            cpu.memory.input.key_down(button);
+                        }
+                    }
+                    Event::KeyUp { keycode: Some(keycode), .. } => {
+                        if let Some(button) = keycode_to_button(keycode) {
+                            cpu.memory.input.key_up(button);
+                        }
+                    }
                     _ => {}
                 }
             }
 
-            ::std::thread::sleep(std::time::Duration::from_secs_f64(1.0/40.0));
+            ::std::thread::sleep(Duration::from_secs_f64(1.0/70.0));
 
             if now.elapsed().as_secs() > 1 {
                 canvas
@@ -115,5 +129,19 @@ fn main() {
         //     let c = cpu.memory.serial.remove(0);
         //     print!("{}", c);
         // }
+    }
+}
+
+fn keycode_to_button(keycode: Keycode) -> Option<input::Button> {
+    match keycode {
+        Keycode::LShift => Some(input::Button::Select),
+        Keycode::Space => Some(input::Button::Start),
+        Keycode::Left => Some(input::Button::Left),
+        Keycode::Right => Some(input::Button::Right),
+        Keycode::Down => Some(input::Button::Down),
+        Keycode::Up => Some(input::Button::Up),
+        Keycode::Z => Some(input::Button::B),
+        Keycode::X => Some(input::Button::A),
+        _ => None
     }
 }

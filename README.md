@@ -8,7 +8,7 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 
 * [x] Basic architecture and organization
 * [ ] CPU Instructions
-  * [ ] Still missing some (check opcodes.rs)
+  * [ ] Still missing a few (check opcodes.rs)
   * [x] ~~CB Instructions~~
 * [x] Timers
 * [x] Interrupts
@@ -23,13 +23,12 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
   * [x] ROM
   * [x] Headers
   * [ ] MBC
-    * MBC1 (WIP)
-    * MBC3
+    [ ] MBC1 (WIP)
+    [ ] MBC3
 * [ ] Graphics
   * [x] ~~SDL Frontend~~
   * [ ] WASM in browser
-* [ ] Controllers
-  * Faked input for now
+* [x] ~~Controllers~~
 * [ ] CLI flags
 * [ ] Audio
 * [ ] Save
@@ -41,7 +40,7 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 
 * [x] ~~01-special~~
 * [ ] 02-interrupts
-  * Everything passes except Timer #4
+  * Everything passes except Timer #4. Timing are probably off somewhere...
 * [x] ~~03-op_sp_hl~~
 * [x] ~~04-op_r_imm~~
 * [x] ~~05-op_rp~~
