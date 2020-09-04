@@ -1,24 +1,30 @@
 use std::fs::File;
 use std::io::prelude::*;
 
+#[derive(Debug)]
 pub enum CartridgeType {
     RomOnly, // TODO: Add other type (MBC1, MBC3...etc)
+    MBC1,
 }
 
+#[derive(Debug)]
 pub struct Cartridge {
     pub rom: Vec<u8>,
+    pub headers: Headers,
 }
 
+#[derive(Debug)]
 pub struct Headers {
-    cartridge_type: CartridgeType,
-    rom_size: usize,
-    ram_size: usize,
+    pub cartridge_type: CartridgeType,
+    pub rom_size: usize,
+    pub ram_size: usize,
 }
 
 impl Headers {
     fn cartridge_type(n: u8) -> CartridgeType {
         match n {
             0x00 => CartridgeType::RomOnly,
+            0x1 | 0x2 | 0x3 => CartridgeType::MBC1,
             _ => panic!("Unknown cartridge type {}", n),
         }
     }
@@ -37,7 +43,7 @@ impl Headers {
         }
     }
 
-    fn new(rom: Vec<u8>) -> Self {
+    fn new(rom: &Vec<u8>) -> Self {
         Self {
             cartridge_type: Headers::cartridge_type(rom[0x147]),
             rom_size: Headers::rom_size(rom[0x148]),
@@ -55,8 +61,11 @@ impl Cartridge {
         let mut rom = Vec::new();
         file.read_to_end(&mut rom).expect("Cannot read file");
 
+        let headers = Headers::new(&rom);
+
         Cartridge {
             rom,
+            headers,
         }
     }
 }

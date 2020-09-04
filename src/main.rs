@@ -27,7 +27,7 @@ fn main() {
     // let mut file = File::open("roms/08-misc_instrs.gb").unwrap();
     // let mut file = File::open("roms/09-op_r_r.gb").unwrap();
     let cartridge = cartridge::Cartridge::load(&mut file);
-    dbg!(cartridge.rom.len());
+    dbg!(&cartridge.headers);
 
     let mut cpu = cpu::Cpu::new(cartridge);
 
