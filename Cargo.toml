@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 sdl2 = "*"
+clap = "3.0.0-beta.1"
 
 [profile.release]
 debug = true

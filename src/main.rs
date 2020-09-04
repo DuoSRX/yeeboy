@@ -10,30 +10,27 @@ pub mod register;
 pub mod timer;
 
 use std::fs::File;
+use std::path::PathBuf;
 use std::time::{Instant, Duration};
 
+use clap::Clap;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
+#[derive(Clap,Debug)]
+#[clap(version = "0.1.0", author = "Xavier Perez <duosrx@gmail.com>")]
+struct Opts {
+    rom: PathBuf,
+    #[clap(long, short)]
+    trace: bool,
+}
+
 fn main() {
-    // let mut file = File::open("roms/tetris.gb").unwrap();
-    let mut file = File::open("roms/drmario.gb").unwrap();
-    // let mut file = File::open("roms/01-special.gb").unwrap();
-    // let mut file = File::open("roms/02-interrupts.gb").unwrap();
-    // let mut file = File::open("roms/03-op_sp_hl.gb").unwrap();
-    // let mut file = File::open("roms/04-op_r_imm.gb").unwrap();
-    // let mut file = File::open("roms/05-op_rp.gb").unwrap();
-    // let mut file = File::open("roms/06-ld_r_r.gb").unwrap();
-    // let mut file = File::open("roms/07-jr_jp_call_ret_rst.gb").unwrap();
-    // let mut file = File::open("roms/08-misc_instrs.gb").unwrap();
-    // let mut file = File::open("roms/09-op_r_r.gb").unwrap();
-    // let mut file = File::open("roms/10-bit_ops.gb").unwrap();
-    // let mut file = File::open("roms/11-op_a_hl.gb").unwrap();
+    let opts = Opts::parse();
+    let mut file = File::open(opts.rom).unwrap();
     let cartridge = cartridge::Cartridge::load(&mut file);
     dbg!(&cartridge.headers);
-
-    let mut cpu = cpu::Cpu::new(cartridge);
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -62,6 +59,8 @@ fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     let mut now = Instant::now();
+
+    let mut cpu = cpu::Cpu::new(cartridge, opts.trace);
 
     'running: loop {
         let prev_cy = cpu.cycles;

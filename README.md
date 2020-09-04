@@ -29,7 +29,7 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
   * [x] ~~SDL Frontend~~
   * [ ] WASM in browser
 * [x] ~~Controllers~~
-* [ ] CLI flags
+* [x] CLI flags
 * [ ] Audio
 * [ ] Save
 * [ ] Logger

@@ -110,10 +110,11 @@ pub struct Cpu {
     pub cycles: u64,
     pub ime: bool,
     pub halted: bool,
+    trace: bool,
 }
 
 impl Cpu {
-    pub fn new(cartridge: Cartridge) -> Self {
+    pub fn new(cartridge: Cartridge, trace: bool) -> Self {
         let memory = Memory::new(cartridge);
         Self {
             registers: Registers::new(),
@@ -121,6 +122,7 @@ impl Cpu {
             cycles: 0,
             ime: true,
             halted: false,
+            trace,
             memory,
         }
     }
@@ -141,14 +143,14 @@ impl Cpu {
             0xCB => {
                 let opcode = self.load(self.pc + 1);
                 let (instruction, cycles, descr) = Self::decode_cb(opcode);
-                // println!("{}", self.trace(descr));
+                if self.trace { println!("{}", self.trace(descr)); }
                 self.pc += 2;
                 self.execute(instruction);
                 cycles
             }
             opcode => {
                 let (instruction, cycles, descr) = Self::decode(opcode);
-                // println!("{}", self.trace(descr));
+                if self.trace { println!("{}", self.trace(descr)); }
                 self.pc += 1;
                 self.execute(instruction);
                 cycles
@@ -858,7 +860,7 @@ mod tests {
     fn make_cpu() -> Cpu {
         let headers = Headers { cartridge_type: CartridgeType::RomOnly, rom_size: 0, ram_size: 0 };
         let cart = Cartridge { rom: vec![0; 0x2000], headers };
-        Cpu::new(cart)
+        Cpu::new(cart, false)
     }
 
     #[test]
