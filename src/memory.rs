@@ -84,13 +84,6 @@ impl Memory {
             0xFF43 => self.gpu.scroll_x = value,
             0xFF44 => self.gpu.ly = 0,
             0xFF45 => self.gpu.lyc = 0,
-            0xFF46 => { // OAM DMA
-                let start = (value as u16) << 8;
-                for offset in 0..=0x9F {
-                    let byte = self.load(start + offset);
-                    self.gpu.oam_store(offset, byte);
-                }
-            }
             0xFF47 => self.gpu.bg_palette = value,
             0xFF48 => self.gpu.obj_palette_0 = value,
             0xFF49 => self.gpu.obj_palette_1 = value,
