@@ -52,7 +52,7 @@ impl Gpu {
             bg_palette: 0,
             obj_palette_0: 0,
             obj_palette_1: 0,
-            frame: vec![0xFF; 160 * 144 * 3],
+            frame: vec![0; 160 * 144 * 3],
             vram: vec![0; 0x2000],
             oam: vec![Sprite::new(); 0x40],
             new_frame: false,
@@ -161,23 +161,31 @@ impl Gpu {
                 let lo = self.load(0x8000 + ptr);
                 let hi = self.load(0x8000 + ptr + 1);
 
-                for idx_x in 0..8 { // FIXME: check if it's inclusive
+                for idx_x in 0..=7 {
                     let pixel_x = x + idx_x;
                     if pixel_x >= 0 && pixel_x <= 160 {
-                        // TODO: X flip
                         let mut bit = idx_x;
                         if sprite.x_flip() { bit = 7 - bit };
                         let mut pixel = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
                         if (lo >> bit) & 1 == 1 { pixel |= 1 };
-                        let palette = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
-                        let color = (palette >> (palette * 2)) & 3;
-                        if pixel != 0 && sprite.attrs & 0x80 == 0 {
+                        let palette= if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
+                        let color = self.sprite_pixel_color(palette, pixel);
+                        if pixel != 0 && sprite.attrs & 0x80 == 0 || self.is_pixel_blank(pixel_x as u8, ly as u8) {
                             self.set_pixel(pixel_x as u8, ly as u8, color)
                         }
                     }
                 }
             }
             n += 4
+        }
+    }
+
+    fn sprite_pixel_color(&self, palette: u8, pixel: u8) -> u8 {
+        match pixel {
+            1 => (palette >> 2) & 3,
+            2 => (palette >> 4) & 3,
+            3 => (palette >> 6) & 3,
+            _ => 0,
         }
     }
 
@@ -243,6 +251,13 @@ impl Gpu {
         self.frame[offset*3] = COLOR_MAP[color].0;
         self.frame[offset*3+1] = COLOR_MAP[color].1;
         self.frame[offset*3+2] = COLOR_MAP[color].2;
+    }
+
+    fn is_pixel_blank(&mut self, x: u8, y: u8) -> bool {
+        let offset = y as usize * 160 + x as usize;
+        self.frame[offset*3] == 0
+            && self.frame[offset*3+1] == 0
+            && self.frame[offset*3+2] == 0
     }
 
     fn clear_frame(&mut self) {

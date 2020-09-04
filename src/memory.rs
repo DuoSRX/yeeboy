@@ -44,6 +44,8 @@ impl Memory {
             0xFF43 => self.gpu.scroll_x,
             0xFF44 => self.gpu.ly,
             0xFF47 => self.gpu.bg_palette,
+            0xFF48 => self.gpu.obj_palette_0,
+            0xFF49 => self.gpu.obj_palette_1,
             0xFF00..=0xFF7F => self.io[address as usize - 0xFF00],
             0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80],
             _ => unimplemented!("Loading {:04X}", address),

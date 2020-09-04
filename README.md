@@ -11,11 +11,13 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 * [ ] CPU Instructions
   * [ ] Still missing some (check opcodes.rs)
   * [x] ~~CB Instructions~~
-* [ ] Timers
-* [ ] Interrupts
+* [x] Timers
+* [x] Interrupts
 * [ ] GPU
   * [x] ~~Background~~
-  * [ ] Sprites
+  * [x] Sprites
+    * Y Flip doesn't work properly
+    * Sprite a flipped horizontally on themselves
   * [ ] Windows
 * [ ] Cartridges
   * [x] ROM
