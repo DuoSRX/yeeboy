@@ -117,7 +117,7 @@ impl Cpu {
         let memory = Memory::new(cartridge);
         Self {
             registers: Registers::new(),
-            pc: 0x100,
+            pc: 0x0,
             cycles: 0,
             ime: true,
             halted: false,
