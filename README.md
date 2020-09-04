@@ -1,7 +1,6 @@
 # Yeeboy
 
 Yet another Game Boy emulator.
-Heavily WIP. Nothing work. Literally nothing is useable. Go away. SHOO
 
 Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com/DuoSRX/yobml) written in ReasonML.
 
@@ -47,7 +46,7 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 * [x] ~~08-misc_instrs~~
 * [x] ~~09-op_r_r~~
 * [x] ~~10-bit_ops~~
-* [ ] 11-op_a_hl
+* [x] ~~11-op_a_hl~~
 
 ## Games that boot
 
