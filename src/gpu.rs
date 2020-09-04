@@ -203,7 +203,11 @@ impl Gpu {
             let on_scanline = (y <= ly) && (y + sprite_height) > ly;
 
             if on_scanline {
-                let y_offset = ly - y; // TODO: y-flip
+                let y_offset = if sprite.y_flip() {
+                    (sprite_height - 1) - (ly - y)
+                } else {
+                    ly - y
+                };
                 let ptr = ((sprite.index as i32 * 16) + ((y_offset as i32) * 2)) as u16;
                 let lo = self.load(0x8000 + ptr);
                 let hi = self.load(0x8000 + ptr + 1);
