@@ -64,7 +64,7 @@ impl Gpu {
         }
     }
 
-    pub fn step(&mut self, cycles: u64, lcd_on: bool) {
+    pub fn step(&mut self, cycles: u64) {
         self.cycles += cycles;
         self.interrupts = 0;
 
@@ -75,8 +75,8 @@ impl Gpu {
             }
             LcdTransfer if self.cycles >= 172 => {
                 self.cycles -= 172;
-                if lcd_on {
-                    if self.control & 1 == 1 {
+                if self.lcd_on() {
+                    if self.bg_priority() {
                         self.render_background();
                         if self.window_enabled() {
                             self.render_window();
@@ -84,7 +84,6 @@ impl Gpu {
                     } else {
                         self.clear_frame();
                     }
-                    // println!("{:08b}", self.control);
                     self.render_sprites();
                 }
                 self.set_mode(HBlank)
@@ -340,6 +339,14 @@ impl Gpu {
 
     fn window_enabled(&self) -> bool {
         self.control & 0x20 != 0
+    }
+
+    fn bg_priority(&self) -> bool {
+        self.control & 0x01 != 0
+    }
+
+    pub fn lcd_on(&self) -> bool {
+        self.control & 0x80 != 0
     }
 }
 
