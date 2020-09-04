@@ -16,16 +16,20 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
   * [x] ~~Background~~
   * [x] Sprites
     * Y Flip doesn't work properly
-    * Sprite a flipped horizontally on themselves
-  * [ ] Windows
+    * ~~Sprite a flipped horizontally on themselves~~
+  * [x] Windows
+    * Needs more testing
 * [ ] Cartridges
   * [x] ROM
-  * [ ] Headers
+  * [x] Headers
   * [ ] MBC
+    * MBC1 (WIP)
+    * MBC3
 * [ ] Graphics
   * [x] ~~SDL Frontend~~
   * [ ] WASM in browser
 * [ ] Controllers
+  * Faked input for now
 * [ ] CLI flags
 * [ ] Audio
 * [ ] Save
@@ -51,7 +55,8 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 ## Games that boot
 
 * Dr Mario
+* Tetris
 
-## Games that work
+## Games that work well
 
 NONE :(

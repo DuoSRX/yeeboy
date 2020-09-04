@@ -35,6 +35,7 @@ impl Memory {
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],
             0xFE00..=0xFE9F => 0, // TODO: OAM
             0xFEA0..=0xFEFF => 0, // No-op
+            0xFF00 => 0xFF, // TODO: Remove hardcoded input
             0xFF04 => self.timer.div,
             0xFF05 => self.timer.tima,
             0xFF06 => self.timer.tma,
@@ -49,7 +50,7 @@ impl Memory {
             0xFF49 => self.gpu.obj_palette_1,
             0xFF4A => self.gpu.window_y,
             0xFF4B => self.gpu.window_x,
-            0xFF00..=0xFF7F => self.io[address as usize - 0xFF00],
+            0xFF01..=0xFF7F => self.io[address as usize - 0xFF00],
             0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80],
             _ => unimplemented!("Loading {:04X}", address),
         }
@@ -69,6 +70,7 @@ impl Memory {
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
             0xFE00..=0xFE9F => self.gpu.oam_store(address - 0xFE00, value),
             0xFEA0..=0xFEFF => {} // No-op
+            0xFF00 => {} // TODO: Input
             0xFF04 => self.timer.div = value,
             0xFF05 => self.timer.tima = value,
             0xFF06 => self.timer.tma = value,
@@ -90,7 +92,7 @@ impl Memory {
             0xFF49 => self.gpu.obj_palette_1 = value,
             0xFF4A => self.gpu.window_y = value,
             0xFF4B => self.gpu.window_x = value,
-            0xFF00..=0xFF7F => self.io[address as usize - 0xFF00] = value,
+            0xFF01..=0xFF7F => self.io[address as usize - 0xFF00] = value,
             0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80] = value,
             _ => unimplemented!("Storing {:02X} @ {:04X}", value, address),
         }
