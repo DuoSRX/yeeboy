@@ -30,7 +30,7 @@ impl Memory {
         }
     }
 
-    pub fn load(&mut self, address: u16) -> u8 {
+    pub fn load(&self, address: u16) -> u8 {
         match address {
             0x0000..=0x7FFF => self.cartridge.rom[address as usize],
             0x8000..=0x9FFF => self.gpu.load(address),
@@ -84,7 +84,7 @@ impl Memory {
             0xFF44 => self.gpu.ly = 0,
             0xFF46 => { // OAM DMA
                 let start = (value as u16) << 8;
-                for offset in 0..0xA0 {
+                for offset in 0..=0x9F {
                     let byte = self.load(start + offset);
                     self.gpu.oam_store(offset, byte);
                 }

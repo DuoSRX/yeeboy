@@ -139,7 +139,7 @@ impl Cpu {
         // TODO: Fix this ugly duplication. Too lazy right now
         let cycles = match self.load_byte() {
             0xCB => {
-                let opcode = self.memory.load(self.pc + 1);
+                let opcode = self.load(self.pc + 1);
                 let (instruction, cycles, descr) = Self::decode_cb(opcode);
                 // println!("{}", self.trace(descr));
                 self.pc += 2;
@@ -173,9 +173,9 @@ impl Cpu {
             self.registers.get16(SP),
             flags,
             self.pc,
-            self.memory.load(self.pc),
-            self.memory.load(self.pc + 1),
-            self.memory.load(self.pc + 2),
+            self.load(self.pc),
+            self.load(self.pc + 1),
+            self.load(self.pc + 2),
             instruction,
         )
     }
@@ -191,11 +191,11 @@ impl Cpu {
     pub fn execute(&mut self, instruction: &Instruction)  {
         match *instruction {
             Adc(s) => {
-                let value = self.load(s);
+                let value = s.load(self);
                 self.do_adc(value as u16);
             },
             Add(s) => {
-                let b = self.load(s);
+                let b = s.load(self);
                 let value = self.registers.a.wrapping_add(b);
                 self.registers.a = value;
                 self.registers.flag(Flag::H, (value & 0xF) < (b & 0xF));
@@ -217,7 +217,7 @@ impl Cpu {
                 self.registers.flag(Flag::Z, false);
             }
             And(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let value = self.registers.a & a;
                 self.registers.a = value;
                 self.registers.flag(Flag::H, true);
@@ -236,7 +236,7 @@ impl Cpu {
                 self.registers.flag(Flag::C, result > 0xFFFF);
             },
             Bit(bit, s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let z = (a >> bit) & 1 != 1;
                 self.registers.flag(Flag::Z, z);
                 self.registers.flag(Flag::N, false);
@@ -259,7 +259,7 @@ impl Cpu {
                 self.registers.unset_flag(Flag::N);
             },
             Cp(s) => {
-                let byte = self.load(s);
+                let byte = s.load(self);
                 self.do_cp(byte);
             },
             Cpl => {
@@ -268,9 +268,9 @@ impl Cpu {
                 self.registers.flag(Flag::N, true);
             },
             Dec(s) => {
-                let value = self.load(s);
+                let value = s.load(self);
                 let result = value.wrapping_sub(1);
-                self.store(s, result);
+                s.store(self, result);
                 self.registers.flag(Flag::H, (result & 0xF) > (value & 0xF));
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, true);
@@ -305,17 +305,17 @@ impl Cpu {
             Ei => self.ime = true,
             Halt => self.halted = true,
             Inc(s @ Storage::Pointer(HL)) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let result = a.wrapping_add(1);
-                self.store(s, result);
+                s.store(self, result);
                 self.registers.flag(Flag::H, (result & 0xF) == 0);
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
             },
             Inc(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let result = a.wrapping_add(1);
-                self.store(s, result);
+                s.store(self, result);
                 self.registers.flag(Flag::H, (result & 0xF) < (a & 0xF));
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
@@ -350,7 +350,7 @@ impl Cpu {
             },
             Lda16A => {
                 let address = self.load_word_and_bump_pc();
-                self.memory.store(address, self.registers.a);
+                self.store(address, self.registers.a);
             },
             Lda16Sp => {
                 let address = self.load_word_and_bump_pc();
@@ -358,26 +358,26 @@ impl Cpu {
             },
             LdAA16 => {
                 let address = self.load_word_and_bump_pc();
-                self.registers.a = self.memory.load(address);
+                self.registers.a = self.load(address);
             },
             LdHlD8 => {
                 let address = self.registers.get16(HL);
                 let value = self.load_and_bump_pc();
-                self.memory.store(address, value);
+                self.store(address, value);
             },
             LddAHl => {
                 let address = self.registers.get16(HL);
-                self.registers.a =  self.memory.load(address);
+                self.registers.a =  self.load(address);
                 self.registers.set16(HL, address.wrapping_sub(1));
             },
             LddHlA => {
                 let address = self.registers.get16(HL);
-                self.memory.store(address, self.registers.a);
+                self.store(address, self.registers.a);
                 self.registers.set16(HL, address.wrapping_sub(1));
             },
             LdHlR(r) => {
                 let address = self.registers.get16(HL);
-                self.memory.store(address, self.registers.get(r));
+                self.store(address, self.registers.get(r));
             },
             LdHlSpE8 => {
                 let a = self.registers.sp as i32;
@@ -394,16 +394,16 @@ impl Cpu {
             }
             LdRHl(r) => {
                 let address = self.registers.get16(HL);
-                self.registers.set(r, self.memory.load(address));
+                self.registers.set(r, self.load(address));
             },
             LdiAHl => {
                 let address = self.registers.get16(HL);
-                self.registers.a = self.memory.load(address);
+                self.registers.a = self.load(address);
                 self.registers.set16(HL, address.wrapping_add(1));
             },
             LdiHlA => {
                 let address = self.registers.get16(HL);
-                self.memory.store(address, self.registers.a);
+                self.store(address, self.registers.a);
                 self.registers.set16(HL, address.wrapping_add(1));
             },
             LdN(r) => {
@@ -416,20 +416,20 @@ impl Cpu {
             },
             LdAR16(r) => {
                 let address = self.registers.get16(r);
-                self.registers.a = self.memory.load(address);
+                self.registers.a = self.load(address);
             },
             LdR16A(r) => {
                 let address = self.registers.get16(r);
-                self.memory.store(address, self.registers.a);
+                self.store(address, self.registers.a);
             },
             LdReadIoC => {
                 let n = self.registers.c as u16;
-                let byte = self.memory.load(n.wrapping_add(0xFF00));
+                let byte = self.load(n.wrapping_add(0xFF00));
                 self.registers.a = byte;
             },
             LdReadIoN => {
                 let n = self.load_and_bump_pc() as u16;
-                let byte = self.memory.load(n.wrapping_add(0xFF00));
+                let byte = self.load(n.wrapping_add(0xFF00));
                 self.registers.a = byte;
             },
             LdRR(r1, r2) => {
@@ -444,15 +444,15 @@ impl Cpu {
             LdWriteIoC => {
                 let n = self.registers.c as u16;
                 let address = n.wrapping_add(0xFF00);
-                self.memory.store(address, self.registers.a);
+                self.store(address, self.registers.a);
             },
             LdWriteIoN => {
                 let n = self.load_and_bump_pc() as u16;
                 let address = n.wrapping_add(0xFF00);
-                self.memory.store(address, self.registers.a);
+                self.store(address, self.registers.a);
             },
             Or(s) => {
-                let value = self.load(s);
+                let value = s.load(self);
                 self.do_or(value);
             },
             Pop16(AF) => {
@@ -473,9 +473,9 @@ impl Cpu {
                 self.registers.sp = sp;
             },
             Res(bit, s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let result = a & !(1 << bit);
-                self.store(s, result);
+                s.store(self, result);
             }
             Ret => {
                 let sp = self.registers.sp;
@@ -500,10 +500,10 @@ impl Cpu {
                 }
             },
             Rl(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let prev_carry = self.registers.has_flag(Flag::C);
                 let result = if prev_carry { (a << 1) | 1 } else { a << 1 };
-                self.store(s, result);
+                s.store(self, result);
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);
@@ -521,11 +521,11 @@ impl Cpu {
                 self.registers.flag(Flag::C, c == 1);
             },
             Rlc(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let c = a & 0x80 > 0;
                 let a = a << 1;
                 let a = if c { a | 1 } else { a };
-                self.store(s, a);
+                s.store(self, a);
                 self.registers.flag(Flag::Z, a == 0);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);
@@ -543,10 +543,10 @@ impl Cpu {
                 self.registers.flag(Flag::C, c);
             },
             Rr(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let carry = self.registers.has_flag(Flag::C) as u8;
                 let value = (carry << 7) | (a >> 1);
-                self.store(s, value);
+                s.store(self, value);
                 self.registers.flag(Flag::Z, value == 0);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);
@@ -563,10 +563,10 @@ impl Cpu {
                 self.registers.flag(Flag::C, (a & 1) == 1);
             },
             Rrc(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let c = a & 1;
                 let value = (c << 7) | (a >> 1);
-                self.store(s, value);
+                s.store(self, value);
                 self.registers.flag(Flag::Z, value == 0);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);
@@ -589,7 +589,7 @@ impl Cpu {
                 self.pc = n;
             }
             Sbc(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 self.do_sbc(a as i16);
             },
             Scf => {
@@ -598,32 +598,32 @@ impl Cpu {
                 self.registers.unset_flag(Flag::N);
             }
             Set(bit, s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let result = a | (1 << bit);
-                self.store(s, result);
+                s.store(self, result);
             }
             Sla(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let result = a << 1;
-                self.store(s, result);
+                s.store(self, result);
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);
                 self.registers.flag(Flag::C, a & 0x80 > 1);
             },
             Sra(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let result = (a >> 1) | (a & 0x80);
-                self.store(s, result);
+                s.store(self, result);
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);
                 self.registers.flag(Flag::C, a & 1 == 1);
             },
             Srl(s) => {
-                let a = self.load(s);
+                let a = s.load(self);
                 let result = a >> 1;
-                self.store(s, result);
+                s.store(self, result);
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);
@@ -631,7 +631,7 @@ impl Cpu {
             },
             Sub(s) => {
                 let a = self.registers.a;
-                let b = self.load(s);
+                let b = s.load(self);
                 let value = a.wrapping_sub(b);
                 self.registers.a = value;
                 self.registers.flag(Flag::H, (value & 0xF) > (a & 0xF));
@@ -659,7 +659,7 @@ impl Cpu {
                 self.registers.flag(Flag::C, false);
             },
             XorHl => {
-                let b = self.memory.load(self.registers.get16(HL));
+                let b = self.load(self.registers.get16(HL));
                 let result = self.registers.a ^ b;
                 self.registers.a = result;
                 self.registers.flag(Flag::Z, result == 0);
@@ -670,7 +670,7 @@ impl Cpu {
             NOP => {},
             Undefined => panic!("Executing undefined instruction at {:04X}", self.pc),
             _ => {
-                let opcode = self.memory.load(self.pc - 1);
+                let opcode = self.load(self.pc - 1);
                 panic!("Reached unimplemented instruction: Opcode {:02X} @ {:04X}", opcode, self.pc)
             },
         }
@@ -678,7 +678,7 @@ impl Cpu {
 
     // Load the byte at current PC
     fn load_byte(&mut self) -> u8 {
-        self.memory.load(self.pc)
+        self.load(self.pc)
     }
 
     // Load the word at current PC
@@ -699,28 +699,20 @@ impl Cpu {
         word
     }
 
-    fn load(&mut self, storage: Storage) -> u8 {
-        match storage {
-            Storage::NextByte => self.load_and_bump_pc(),
-            Storage::Register(r) => self.registers.get(r),
-            Storage::Pointer(r) => {
-                let address = self.registers.get16(r);
-                self.memory.load(address)
-            }
-        }
+    fn load(&self, address: u16) -> u8 {
+        self.memory.load(address)
     }
 
-    fn store(&mut self, storage: Storage, value: u8) {
-        match storage {
-            Storage::NextByte => panic!("Can't store at next byte"),
-            Storage::Register(r) => {
-                self.registers.set(r, value);
-            }
-            Storage::Pointer(r) => {
-                let address = self.registers.get16(r);
-                self.memory.store(address, value)
-            }
-        }
+    fn store(&mut self, address: u16, value: u8) {
+        self.memory.store(address, value);
+    }
+
+    fn storage_load(&mut self, storage: Storage) -> u8 {
+        storage.load(self)
+    }
+
+    fn storage_store(&mut self, storage: Storage, value: u8) {
+        storage.store(self, value);
     }
 
     fn do_call(&mut self) {
@@ -774,11 +766,11 @@ impl Cpu {
     }
 
     fn do_swap(&mut self, s: Storage) {
-        let a = self.load(s);
+        let a = s.load(self);
         let lo = (a & 0x0F) << 4;
         let hi = (a & 0xF0) >> 4;
         let result = lo | hi;
-        self.store(s, result);
+        s.store(self, result);
         self.registers.flag(Flag::C, false);
         self.registers.flag(Flag::H, false);
         self.registers.flag(Flag::N, false);
@@ -786,12 +778,12 @@ impl Cpu {
     }
 
     pub fn is_interrupt_enabled(&mut self, n: u8) -> bool {
-        self.memory.load(INTERRUPT_ENABLE) & (1 << n) != 0
+        self.load(INTERRUPT_ENABLE) & (1 << n) != 0
     }
 
     pub fn request_interrupt(&mut self, n: u8) {
-        let isf = self.memory.load(INTERRUPT_FLAG);
-        self.memory.store(INTERRUPT_FLAG, isf | n);
+        let isf = self.load(INTERRUPT_FLAG);
+        self.store(INTERRUPT_FLAG, isf | n);
     }
 
     pub fn interrupt(&mut self) {
@@ -802,11 +794,11 @@ impl Cpu {
     }
 
     fn check_interrupts(&mut self, n: u8) {
-        let if_val = self.memory.load(INTERRUPT_FLAG);
+        let if_val = self.load(INTERRUPT_FLAG);
 
         if if_val & (1 << n) != 0 && self.is_interrupt_enabled(n) {
             let if_val = if_val & !(1 << n);
-            self.memory.store(INTERRUPT_FLAG, if_val);
+            self.store(INTERRUPT_FLAG, if_val);
             let sp = self.registers.sp.wrapping_sub(2);
             self.memory.store16(sp, self.pc);
             self.registers.sp = sp;
@@ -814,6 +806,32 @@ impl Cpu {
             self.pc = INTERRUPT_VECTORS[n as usize];
         } else if n != 4 {
             self.check_interrupts(n + 1);
+        }
+    }
+}
+
+impl Storage {
+    fn load(&self, cpu: &mut Cpu) -> u8 {
+        match *self {
+            Storage::NextByte => cpu.load_and_bump_pc(),
+            Storage::Register(r) => cpu.registers.get(r),
+            Storage::Pointer(r) => {
+                let address = cpu.registers.get16(r);
+                cpu.memory.load(address)
+            }
+        }
+    }
+
+    fn store(&self, cpu: &mut Cpu, value: u8) {
+        match *self {
+            Storage::NextByte => panic!("Can't store at next byte"),
+            Storage::Register(r) => {
+                cpu.registers.set(r, value);
+            }
+            Storage::Pointer(r) => {
+                let address = cpu.registers.get16(r);
+                cpu.memory.store(address, value)
+            }
         }
     }
 }
