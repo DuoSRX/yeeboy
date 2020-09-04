@@ -2,11 +2,14 @@ use crate::cpu::Storage::*;
 use crate::cpu::Instruction::{self, *};
 use crate::register::{Flag, Register8::*, Register16::*};
 
+// FIXME: The formatting in this file is horribly inconsistent
+// and frankly, disgusting. I will fix it eventually, either by aligning
+// everything nicely or letting rustfmt do its thing. *shrug*
+
 // Array containing all the instructions indexed by opcode.
 // Tuple format: (Instruction, number of cycles, human readable string)
 // Does not include the CB instructions which will be stored in a different array.
 // Idea: what if instead of the enum, the first item as fn(&mut cpu) -> () ?
-// FIXME: OH GOD THE FORMATTING IS ALL BROKEN AAAAAAAAAA
 pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     // 0x
     (NOP,            4,  "NOP"),
@@ -70,7 +73,7 @@ pub static OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Scf,            4,  "SCF"),
     (Jr(Flag::C, true), 8, "JR C, nn"),
     (AddHlR16(SP),   8,  "ADD HL, SP"),
-    (NotImplemented, 4,  "NOT IMPLEMENTED YET"),
+    (LddAHl, 8,  "LDD A, (HL)"),
     (Dec16(SP),     8,  "DEC SP"),
     (Inc(Register(A)),         4,  "INC A"),
     (Dec(Register(A)),         4,  "DEC A"),
@@ -343,14 +346,14 @@ pub static CB_OPCODES: [(Instruction, u64, &'static str); 0x100] = [
     (Swap(Register(L)), 8,  "SWAP L"),
     (Swap(Pointer(HL)), 16,  "SWAP (HL)"),
     (Swap(Register(A)), 8,  "SWAP A"),
-    (Srl(B),         8,  "SRL B"),
-    (Srl(C),         8,  "SRL C"),
-    (Srl(D),         8,  "SRL D"),
-    (Srl(E),         8,  "SRL E"),
-    (Srl(H),         8,  "SRL H"),
-    (Srl(L),         8,  "SRL L"),
-    (NotImplemented, 4,  "SRL (HL)"),
-    (Srl(A),         8,  "SRL A"),
+    (Srl(Register(B)),  8,  "SRL B"),
+    (Srl(Register(C)),  8,  "SRL C"),
+    (Srl(Register(D)),  8,  "SRL D"),
+    (Srl(Register(E)),  8,  "SRL E"),
+    (Srl(Register(H)),  8,  "SRL H"),
+    (Srl(Register(L)),  8,  "SRL L"),
+    (Srl(Pointer(HL)), 16,  "SRL (HL)"),
+    (Srl(Register(A)),  8,  "SRL A"),
     // 4x
     (Bit(0, Register(B)),  8, "BIT B, 0"),
     (Bit(0, Register(C)),  8, "BIT C, 0"),

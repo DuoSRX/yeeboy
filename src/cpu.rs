@@ -50,6 +50,7 @@ pub enum Instruction {
     Lda16Sp,
     LdAA16,
     LdAR16(Register16),
+    LddAHl,
     LddHlA,
     LdHlD8,
     LdHlR(Register8),
@@ -89,7 +90,7 @@ pub enum Instruction {
     Set(u8, Storage),
     Sla(Storage),
     Sra(Storage),
-    Srl(Register8),
+    Srl(Storage),
     Sub(Storage),
     Swap(Storage),
     // Sla(Storage),
@@ -364,6 +365,11 @@ impl Cpu {
                 let value = self.load_and_bump_pc();
                 self.memory.store(address, value);
             },
+            LddAHl => {
+                let address = self.registers.get16(HL);
+                self.registers.a =  self.memory.load(address);
+                self.registers.set16(HL, address.wrapping_sub(1));
+            },
             LddHlA => {
                 let address = self.registers.get16(HL);
                 self.memory.store(address, self.registers.a);
@@ -614,10 +620,10 @@ impl Cpu {
                 self.registers.flag(Flag::H, false);
                 self.registers.flag(Flag::C, a & 1 == 1);
             },
-            Srl(r) => {
-                let a = self.registers.get(r);
+            Srl(s) => {
+                let a = self.load(s);
                 let result = a >> 1;
-                self.registers.set(r, result);
+                self.store(s, result);
                 self.registers.flag(Flag::Z, result == 0);
                 self.registers.flag(Flag::N, false);
                 self.registers.flag(Flag::H, false);

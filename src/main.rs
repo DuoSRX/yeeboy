@@ -61,7 +61,6 @@ fn main() {
     let mut now = std::time::Instant::now();
 
     'running: loop {
-
         let prev_cy = cpu.cycles;
         cpu.step();
         let elapsed = cpu.cycles - prev_cy;
