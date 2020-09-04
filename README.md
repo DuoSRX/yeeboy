@@ -4,6 +4,22 @@ Yet another Game Boy emulator.
 
 Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com/DuoSRX/yobml) written in ReasonML.
 
+## Usage
+
+`$ cargo run --release -- path/to/rom-file`
+
+Optionally provide `--trace` to have the emulator spew out every instruction while it's running.
+Keep in mind that it has a negative impact on performance, depending on your terminal of choice.
+
+## Controls (not configurable yet)
+
+* A -> X
+* B -> Z
+* Select -> Left Shit
+* Start -> Space
+* D-Pad -> Arrow keys
+* Escape -> Quit
+
 ## TODO:
 
 * [x] Basic architecture and organization
@@ -30,6 +46,7 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
   * [ ] WASM in browser
 * [x] ~~Controllers~~
 * [x] CLI flags
+* [ ] Timing is off (need to add a frame limiter)
 * [ ] Audio
 * [ ] Save
 * [ ] Logger
@@ -51,11 +68,16 @@ Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com
 * [x] ~~10-bit_ops~~
 * [x] ~~11-op_a_hl~~
 
-## Games that boot
+
+## Playable games
 
 * Dr Mario
+
+## Games that boot but are unplayble
+
 * Tetris
+  * Boot and "playable" but the tetrominos are invisible
 
-## Games that work well
+## Games that won't even start or black screen
 
-NONE :(
+* Pokemon Red
