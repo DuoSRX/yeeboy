@@ -48,6 +48,7 @@ impl Memory {
             0xFF42 => self.gpu.scroll_y,
             0xFF43 => self.gpu.scroll_x,
             0xFF44 => self.gpu.ly,
+            0xFF45 => self.gpu.lyc,
             0xFF47 => self.gpu.bg_palette,
             0xFF48 => self.gpu.obj_palette_0,
             0xFF49 => self.gpu.obj_palette_1,
@@ -82,6 +83,7 @@ impl Memory {
             0xFF42 => self.gpu.scroll_y = value,
             0xFF43 => self.gpu.scroll_x = value,
             0xFF44 => self.gpu.ly = 0,
+            0xFF45 => self.gpu.lyc = 0,
             0xFF46 => { // OAM DMA
                 let start = (value as u16) << 8;
                 for offset in 0..=0x9F {
