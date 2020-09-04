@@ -73,8 +73,8 @@ fn main() {
             cpu.request_interrupt(4);
         }
 
-        let lcd_on = cpu.memory.gpu.control & 0x80 > 0;
-        cpu.memory.gpu.step(elapsed, lcd_on);
+        cpu.memory.gpu.step(elapsed);
+        let lcd_on = cpu.memory.gpu.lcd_on();
 
         if cpu.memory.gpu.new_frame && lcd_on {
             texture.update(None, &cpu.memory.gpu.frame, 160 * 3).unwrap();
