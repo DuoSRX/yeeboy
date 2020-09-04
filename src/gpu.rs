@@ -22,6 +22,7 @@ pub struct Gpu {
     mode: Mode,
     pub cycles: u64,
     pub ly: u8,
+    pub lyc: u8,
     pub lcd: u8,
     pub frame: Vec<u8>,
     pub frame_count: u64,
@@ -47,6 +48,7 @@ impl Gpu {
             cycles: 0,
             frame_count: 0,
             ly: 0,
+            lyc: 0,
             scroll_x: 0,
             scroll_y: 0,
             window_x: 0,
@@ -110,7 +112,10 @@ impl Gpu {
             _ => {}
         }
 
-        // TODO: Compare ly and lyc and fire interrupt
+        if self.ly == self.lyc {
+            self.lcd |= 0x40;
+            self.interrupts |= 2;
+        }
     }
 
     fn render_background(&mut self) {
