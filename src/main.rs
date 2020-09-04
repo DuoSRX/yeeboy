@@ -9,12 +9,11 @@ pub mod register;
 pub mod timer;
 
 use std::fs::File;
-// use std::time::Duration;
+use std::time::{Instant, Duration};
 
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-// use sdl2::pixels::Color;
 
 fn main() {
     // let mut file = File::open("roms/tetris.gb").unwrap();
@@ -58,7 +57,7 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut now = std::time::Instant::now();
+    let mut now = Instant::now();
 
     'running: loop {
         let prev_cy = cpu.cycles;
@@ -101,7 +100,7 @@ fn main() {
                     .set_title(&format!("YeeBoy - {} FPS", cpu.memory.gpu.frame_count))
                     .unwrap();
                 cpu.memory.gpu.frame_count = 0;
-                now = std::time::Instant::now();
+                now = Instant::now();
             }
         }
 
