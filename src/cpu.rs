@@ -704,6 +704,10 @@ impl Cpu {
     }
 
     fn store(&mut self, address: u16, value: u8) {
+        if address == 0xFF46 {
+            return self.oam_dma(value);
+        }
+
         self.memory.store(address, value);
     }
 
@@ -713,6 +717,15 @@ impl Cpu {
 
     fn storage_store(&mut self, storage: Storage, value: u8) {
         storage.store(self, value);
+    }
+
+    fn oam_dma(&mut self, value: u8) {
+        let start = (value as u16) << 8;
+        for offset in 0..=0x9F {
+            let byte = self.load(start + offset);
+            self.memory.gpu.oam_store(offset, byte);
+        }
+        self.cycles += 160;
     }
 
     fn do_call(&mut self) {
@@ -817,7 +830,7 @@ impl Storage {
             Storage::Register(r) => cpu.registers.get(r),
             Storage::Pointer(r) => {
                 let address = cpu.registers.get16(r);
-                cpu.memory.load(address)
+                cpu.load(address)
             }
         }
     }
@@ -830,7 +843,7 @@ impl Storage {
             }
             Storage::Pointer(r) => {
                 let address = cpu.registers.get16(r);
-                cpu.memory.store(address, value)
+                cpu.store(address, value)
             }
         }
     }
