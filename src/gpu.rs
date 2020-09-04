@@ -165,7 +165,7 @@ impl Gpu {
                     let pixel_x = x + idx_x;
                     if pixel_x >= 0 && pixel_x <= 160 {
                         let mut bit = idx_x;
-                        if sprite.x_flip() { bit = 7 - bit };
+                        if !sprite.x_flip() { bit = 7 - bit };
                         let mut pixel = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
                         if (lo >> bit) & 1 == 1 { pixel |= 1 };
                         let palette= if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
