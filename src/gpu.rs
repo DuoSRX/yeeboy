@@ -32,6 +32,8 @@ pub struct Gpu {
     pub control: u8,
     pub scroll_x: u8,
     pub scroll_y: u8,
+    pub window_x: u8,
+    pub window_y: u8,
     pub bg_palette: u8,
     pub obj_palette_0: u8,
     pub obj_palette_1: u8,
@@ -47,6 +49,8 @@ impl Gpu {
             ly: 0,
             scroll_x: 0,
             scroll_y: 0,
+            window_x: 0,
+            window_y: 0,
             control: 0,
             interrupts: 0,
             bg_palette: 0,
@@ -74,10 +78,13 @@ impl Gpu {
                 if lcd_on {
                     if self.control & 1 == 1 {
                         self.render_background();
+                        if self.window_enabled() {
+                            self.render_window();
+                        }
                     } else {
                         self.clear_frame();
                     }
-                    // TODO: render window
+                    // println!("{:08b}", self.control);
                     self.render_sprites();
                 }
                 self.set_mode(HBlank)
@@ -138,6 +145,46 @@ impl Gpu {
             let colb = -(((px + scroll_x) as i32 % 8) - 7);
             let coln = if (p1 >> colb) & 1 == 1 { 1 } else { 0 };
             let coln = (coln << 1) | (if (p0 >> colb) & 1 == 1 { 1 } else { 0 });
+            let color = colors[coln as usize];
+            self.set_pixel(px as u8, ly as u8, color);
+        }
+    }
+
+    fn render_window(&mut self) {
+        let palette = self.bg_palette;
+        let colors = [
+            palette & 3,
+            (palette >> 2) & 3,
+            (palette >> 4) & 3,
+            (palette >> 6) & 3,
+        ];
+
+        let ly = self.ly as u16;
+        let tile_data = self.tile_data();
+        let tile_map = self.window_tile_map();
+        let window_y = ly - self.window_y as u16;
+        let y = window_y / 8;
+        let y_offset = window_y % 8;
+        let window_x = self.window_x.wrapping_sub(7);
+
+        for px in 0..=159 {
+            if px < window_x {
+                continue;
+            }
+
+            let x = (px - window_x) / 8;
+            let tile = self.load(tile_map.wrapping_add(y * 32).wrapping_add(x as u16));
+            let ptr = match tile_data {
+                0x9000 => (tile_data as i32 + (tile as i8 as i32 * 0x10)) as u16,
+                _      => tile_data.wrapping_add(tile as u16 * 0x10),
+            };
+            let ptr = ptr.wrapping_add(y_offset * 2);
+            let p0 = self.load(ptr);
+            let p1 = self.load(ptr + 1);
+            let colb = 7 - px % 8;
+            let pix0 = if p0 >> colb & 1 == 1 { 1 } else { 0 };
+            let pix1 = if p1 >> colb & 1 == 1 { 2 } else { 0 };
+            let coln = pix0 | pix1;
             let color = colors[coln as usize];
             self.set_pixel(px as u8, ly as u8, color);
         }
@@ -278,6 +325,17 @@ impl Gpu {
             true => 0x9C00,
             _    => 0x9800,
         }
+    }
+
+    fn window_tile_map(&self) -> u16 {
+        match self.control & 0x40 > 0 {
+            true => 0x9C00,
+            _    => 0x9800,
+        }
+    }
+
+    fn window_enabled(&self) -> bool {
+        self.control & 0x20 != 0
     }
 }
 
