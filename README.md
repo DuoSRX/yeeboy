@@ -31,7 +31,7 @@ Keep in mind that it has a negative impact on performance, depending on your ter
 * [ ] GPU
   * [x] ~~Background~~
   * [x] Sprites
-    * Y Flip doesn't work properly
+    * ~~Y Flip doesn't work properly~~
     * ~~Sprite a flipped horizontally on themselves~~
   * [x] Windows
     * Needs more testing
@@ -52,12 +52,12 @@ Keep in mind that it has a negative impact on performance, depending on your ter
 * [ ] Logger
 * [ ] Debugger
 * [ ] Config file
+* [ ] Automated testing
 
 ## Blaargs tests:
 
 * [x] ~~01-special~~
-* [ ] 02-interrupts
-  * Everything passes except Timer #4. Timing are probably off somewhere...
+* [x] ~~02-interrupts~~
 * [x] ~~03-op_sp_hl~~
 * [x] ~~04-op_r_imm~~
 * [x] ~~05-op_rp~~
