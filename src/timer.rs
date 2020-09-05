@@ -1,8 +1,7 @@
 #[derive(Default, Debug)]
 pub struct Timer {
-    cycles: u64,
-    counter: usize,
-    div_counter: usize,
+    counter: u64,
+    div_counter: u64,
 
     pub div: u8,  // FF04
     pub tima: u8, // FF05
@@ -19,48 +18,54 @@ pub struct Timer {
 
 impl Timer {
     pub fn new() -> Self {
-        Default::default()
+        Self {
+            counter: 0,
+            div_counter: 0,
+            div: 0,
+            tima: 0,
+            tma: 0,
+            tac: 0,
+        }
     }
 
     pub fn tick(&mut self, cycles: u64) -> bool {
-        self.cycles += cycles;
+        let mut interrupted = false;
+        self.div_counter += cycles;
 
-        // The CPU runs at around 4 MHz and div increments at 16 MHz
-        // So we only run the process every 4 CPU cycles
-        if self.cycles >= 4 {
-            self.cycles -= 4;
-            self.counter += 1;
-            self.div_counter += 1;
-            if self.div_counter == 16 {
-                self.div = self.div.wrapping_add(1);
-                self.div_counter = 0;
+        while self.div_counter >= 256 {
+            self.div = self.div.wrapping_add(1);
+            self.div_counter -= 256;
+        }
+
+        let step = self.clock_select();
+
+        if step > 0 {
+            self.counter += cycles;
+
+            while self.counter >= step {
+                self.counter -= step;
+                self.tima = self.tima.wrapping_add(1);
+
+                // We overflowed, transfer TMA to TIMA // and signal an interrupt
+                if self.tima == 0 {
+                    self.tima = self.tma;
+                    interrupted = true;
+                }
             }
         }
 
-        let cs = self.clock_select();
-        if cs > 0 && self.counter > cs {
-            self.counter = 0;
-            self.tima = self.tima.wrapping_add(1);
-            if self.tima == 0 {
-                self.tima = self.tma;
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        }
+        interrupted
     }
 
-    fn clock_select(&self) -> usize {
+    fn clock_select(&self) -> u64 {
         if self.tac & 0x4 == 0 {
             return 0;
-        };
+        }
         match self.tac & 0x3 {
-            0 => 1024,
             1 => 16,
             2 => 64,
-            _ => 256,
+            3 => 256,
+            _ => 1024,
         }
     }
 }

@@ -112,7 +112,7 @@ fn main() {
             }
         }
 
-        if cpu.memory.timer.tick(elapsed / 4) {
+        if cpu.memory.timer.tick(elapsed) {
             cpu.request_interrupt(4);
         }
 
