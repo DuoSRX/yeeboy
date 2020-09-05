@@ -811,8 +811,18 @@ impl Cpu {
         self.store(INTERRUPT_FLAG, isf | n);
     }
 
+    pub fn has_interrupt(&mut self) -> bool {
+        let interrupt_flag = self.load(INTERRUPT_FLAG);
+        let interrupt_enable = self.load(INTERRUPT_ENABLE);
+        interrupt_flag & interrupt_enable != 0
+    }
+
     pub fn interrupt(&mut self) {
-        self.halted = false;
+        // Interrupts should wake up the CPU, even if IME is disabled
+        if self.has_interrupt() {
+            self.halted = false;
+        }
+
         if self.ime {
             self.check_interrupts(0);
         }
