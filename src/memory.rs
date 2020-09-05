@@ -74,7 +74,7 @@ impl Memory {
             0xFE00..=0xFE9F => self.gpu.oam_store(address - 0xFE00, value),
             0xFEA0..=0xFEFF => {} // No-op
             0xFF00 => self.input.set(value),
-            0xFF04 => self.timer.div = value,
+            0xFF04 => self.timer.div = 0,
             0xFF05 => self.timer.tima = value,
             0xFF06 => self.timer.tma = value,
             0xFF07 => self.timer.tac = value,
