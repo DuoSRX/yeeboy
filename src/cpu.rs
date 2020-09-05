@@ -721,6 +721,12 @@ impl Cpu {
         storage.store(self, value);
     }
 
+    fn push16(&mut self, value: u16) {
+        let sp = self.registers.sp.wrapping_sub(2);
+        self.memory.store16(sp, value);
+        self.registers.sp = sp;
+    }
+
     fn oam_dma(&mut self, value: u8) {
         let start = (value as u16) << 8;
         for offset in 0..=0x9F {
@@ -796,6 +802,10 @@ impl Cpu {
         self.load(INTERRUPT_ENABLE) & (1 << n) != 0
     }
 
+    pub fn is_interrupt_requested(&mut self, n: u8) -> bool {
+        self.load(INTERRUPT_FLAG) & (1 << n) != 0
+    }
+
     pub fn request_interrupt(&mut self, n: u8) {
         let isf = self.load(INTERRUPT_FLAG);
         self.store(INTERRUPT_FLAG, isf | n);
@@ -809,17 +819,27 @@ impl Cpu {
     }
 
     fn check_interrupts(&mut self, n: u8) {
+        // We only handle:
+        // 0 - VBLank
+        // 1 - LCD STAT
+        // 2 - Timer
+        // TODO: Serial (3)
+        // TODO: Joypad (4)
+        if n > 3 { return };
+
         let if_val = self.load(INTERRUPT_FLAG);
 
         if if_val & (1 << n) != 0 && self.is_interrupt_enabled(n) {
+            // Unset the interrupt in IF
             let if_val = if_val & !(1 << n);
             self.store(INTERRUPT_FLAG, if_val);
-            let sp = self.registers.sp.wrapping_sub(2);
-            self.memory.store16(sp, self.pc);
-            self.registers.sp = sp;
+            // Push the current PC
+            self.push16(self.pc);
+            // Disable IME
             self.ime = false;
+            // Jump to the appropriate interrupt vector
             self.pc = INTERRUPT_VECTORS[n as usize];
-        } else if n != 4 {
+        } else {
             self.check_interrupts(n + 1);
         }
     }

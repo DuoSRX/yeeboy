@@ -67,11 +67,6 @@ fn main() {
         cpu.step();
         let elapsed = cpu.cycles - prev_cy;
 
-        let timer_int = cpu.memory.timer.tick(elapsed / 4);
-        if timer_int {
-            cpu.request_interrupt(4);
-        }
-
         cpu.memory.gpu.step(elapsed);
         let lcd_on = cpu.memory.gpu.lcd_on();
 
@@ -115,6 +110,10 @@ fn main() {
                 cpu.memory.gpu.frame_count = 0;
                 now = Instant::now();
             }
+        }
+
+        if cpu.memory.timer.tick(elapsed / 4) {
+            cpu.request_interrupt(4);
         }
 
         if cpu.memory.gpu.interrupts > 0 {
