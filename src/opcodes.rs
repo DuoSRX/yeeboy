@@ -29,7 +29,7 @@ pub static OPCODES: [(Instruction, u64, &str); 0x100] = [
     (LdN(C),         8,  "LD C, n"),
     (Rrca,           4,  "RRCA"),
     // 1x
-    (NotImplemented, 4,  "STOP"),
+    (NOP,            4,  "STOP"),
     (LdNN(DE),       12, "LD DE, nn"),
     (LdR16A(DE),     8, "LD [DE], A"),
     (Inc16(DE),      8,  "INC DE"),

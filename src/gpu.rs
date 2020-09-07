@@ -18,7 +18,6 @@ enum Mode {
 use Mode::*;
 
 pub struct Gpu {
-    rom: Vec<u8>,
     mode: Mode,
     pub cycles: u64,
     pub ly: u8,
@@ -41,7 +40,7 @@ pub struct Gpu {
 }
 
 impl Gpu {
-    pub fn new(rom: Vec<u8>) -> Self {
+    pub fn new() -> Self {
         Gpu {
             mode: HBlank,
             lcd: 0x80,
@@ -62,7 +61,6 @@ impl Gpu {
             vram: vec![0; 0x2000],
             oam: vec![Sprite::new(); 0x40],
             new_frame: false,
-            rom
         }
     }
 
