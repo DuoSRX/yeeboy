@@ -34,6 +34,7 @@ impl Memory {
         match address {
             0x0000..=0x7FFF => self.cartridge.mbc.load(address),
             0x8000..=0x9FFF => self.gpu.load(address),
+            0xA000..=0xBFFF => self.cartridge.mbc.load(address),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize],
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],
             0xFE00..=0xFE9F => 0, // TODO: OAM
@@ -56,7 +57,7 @@ impl Memory {
             0xFF4B => self.gpu.window_x,
             0xFF01..=0xFF7F => self.io[address as usize - 0xFF00],
             0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80],
-            _ => unimplemented!("Loading {:04X}", address),
+            // _ => unimplemented!("Loading {:04X}", address),
         }
     }
 
@@ -69,6 +70,7 @@ impl Memory {
             // 0x0000..=0x7FFF => self.cartridge.rom[address as usize] = value,
             0x0000..=0x7FFF => {} // TODO: Cartridge ram, MBC...etc
             0x8000..=0x9FFF => self.gpu.store(address, value),
+            0xA000..=0xBFFF => self.cartridge.mbc.store(address, value),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize] = value,
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize] = value,
             0xFE00..=0xFE9F => self.gpu.oam_store(address - 0xFE00, value),
@@ -91,7 +93,7 @@ impl Memory {
             0xFF4B => self.gpu.window_x = value,
             0xFF01..=0xFF7F => self.io[address as usize - 0xFF00] = value,
             0xFF80..=0xFFFF => self.high_ram[address as usize - 0xFF80] = value,
-            _ => unimplemented!("Storing {:02X} @ {:04X}", value, address),
+            // _ => unimplemented!("Storing {:02X} @ {:04X}", value, address),
         }
     }
 

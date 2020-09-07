@@ -51,6 +51,7 @@ impl MBC1 {
     }
 }
 
+// https://gbdev.gg8.se/wiki/articles/MBC1
 impl MBC for MBC1 {
     fn load(&self, address: u16) -> u8 {
         match address {
@@ -92,10 +93,64 @@ impl MBC for MBC1 {
     }
 }
 
+pub struct MBC3 {
+    rom_bank: usize,
+    ram_bank: usize,
+    rom: Vec<u8>,
+    ram: Vec<u8>,
+}
+
+impl MBC3 {
+    pub fn new(rom: Vec<u8>) -> Self {
+        Self {
+            rom_bank: 1,
+            ram_bank: 0,
+            ram: vec![0; 0x800],
+            rom,
+        }
+    }
+}
+
+// https://gbdev.gg8.se/wiki/articles/MBC3
+impl MBC for MBC3 {
+    fn load(&self, address: u16) -> u8 {
+        match address {
+            0x0000..=0x3FFF => self.rom[address as usize],
+            0x4000..=0x7FFF => {
+                let offset = self.rom_bank * 0x4000;
+                self.rom[(offset + (address as usize & 0x3FFF)) as usize]
+            }
+            0xA000..=0xBFFF => {
+                self.ram[self.ram_bank * 0x2000 + address as usize - 0xA000]
+            }
+            _ => panic!()
+        }
+    }
+
+    fn store(&mut self, address: u16, value: u8) {
+        match address {
+            0x0000..=0x1FFF => {} // RAM Enable. No op
+            0x2000..=0x3FFF => {
+                let value = value & 0x7F;
+                self.rom_bank = if value == 0 { 1 } else { value } as usize;
+            }
+            0x4000..=0x5FFF => {
+                self.ram_bank = value as usize & 3;
+            }
+            0x6000..=0x7FFF => {} // TODO: latch clock data
+            0xA000..=0xBFFF => {
+                self.ram[self.ram_bank * 0x2000 + address as usize - 0xA000] = value;
+            }
+            _ => panic!()
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum CartridgeType {
-    RomOnly, // TODO: Add other type (MBC1, MBC3...etc)
+    RomOnly,
     MBC1,
+    MBC3,
 }
 
 pub struct Cartridge {
@@ -114,8 +169,9 @@ impl Headers {
     fn cartridge_type(n: u8) -> CartridgeType {
         match n {
             0x00 => CartridgeType::RomOnly,
-            0x1 | 0x2 | 0x3 => CartridgeType::MBC1,
-            _ => panic!("Unknown cartridge type {}", n),
+            0x01..=0x03 => CartridgeType::MBC1,
+            0x0F..=0x13 => CartridgeType::MBC3,
+            _ => panic!("Unknown cartridge type {:02X}", n),
         }
     }
 
@@ -156,6 +212,7 @@ impl Cartridge {
         let mbc: Box<dyn MBC> = match headers.cartridge_type {
             CartridgeType::RomOnly => Box::new(RomOnly::new(rom)),
             CartridgeType::MBC1 => Box::new(MBC1::new(rom)),
+            CartridgeType::MBC3 => Box::new(MBC3::new(rom)),
         };
 
         Cartridge {
