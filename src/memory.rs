@@ -17,7 +17,7 @@ pub struct Memory  {
 impl Memory {
     pub fn new(cartridge: Cartridge) -> Self {
         // TODO: Share a reference instead of cloning the entire rom
-        let gpu = Gpu::new(cartridge.rom.clone());
+        let gpu = Gpu::new();
         Self {
             work_ram: vec![0; 0x2000], // 8 kB of RAM
             high_ram: vec![0; 0x80],   // Mapped from 0xFF80 to 0xFFF
@@ -32,7 +32,7 @@ impl Memory {
 
     pub fn load(&self, address: u16) -> u8 {
         match address {
-            0x0000..=0x7FFF => self.cartridge.rom[address as usize],
+            0x0000..=0x7FFF => self.cartridge.mbc.load(address),
             0x8000..=0x9FFF => self.gpu.load(address),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize],
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],

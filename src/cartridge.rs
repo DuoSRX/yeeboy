@@ -1,16 +1,106 @@
 use std::fs::File;
 use std::io::prelude::*;
 
+pub trait MBC {
+    fn load(&self, address: u16) -> u8;
+    fn store(&mut self, address: u16, value: u8);
+}
+
+pub struct RomOnly {
+    rom: Vec<u8>
+}
+
+impl RomOnly {
+    pub fn new(rom: Vec<u8>) -> Self {
+        Self {
+            rom
+        }
+    }
+}
+
+impl MBC for RomOnly {
+    fn load(&self, address: u16) -> u8 {
+        self.rom[address as usize]
+    }
+
+    // Can't write to a RomOnly cartridge
+    fn store(&mut self, _address: u16, _value: u8) {}
+}
+
+enum MBC1Mode {
+    RAM, ROM
+}
+
+pub struct MBC1 {
+    mode: MBC1Mode,
+    rom_bank: u16,
+    ram_bank: u16,
+    rom: Vec<u8>,
+    ram: Vec<u8>,
+}
+
+impl MBC1 {
+    pub fn new(rom: Vec<u8>) -> Self {
+        Self {
+            mode: MBC1Mode::ROM,
+            rom_bank: 1,
+            ram_bank: 0,
+            ram: vec![0; 0x800],
+            rom,
+        }
+    }
+}
+
+impl MBC for MBC1 {
+    fn load(&self, address: u16) -> u8 {
+        match address {
+            0x0000..=0x3FFF => self.rom[address as usize],
+            0x4000..=0x7FFF => {
+                let offset = self.rom_bank * 0x4000;
+                self.rom[(offset + (address & 0x3FFF)) as usize]
+            }
+            0xA000..=0xBFFF => 0,
+            _ => panic!()
+        }
+    }
+
+    fn store(&mut self, address: u16, value: u8) {
+        match address {
+            0x0000..=0x1FFF => {} // RAM Enable. No op
+            0x2000..=0x3FFF => {
+                let value = value & 0x1F;
+                let value = if value == 0 { 1 } else { value };
+                self.rom_bank = self.rom_bank & 0b0110_0000 | value as u16
+            }
+            0x4000..=0x5FFF => {
+                match self.mode {
+                    MBC1Mode::ROM => {
+                        let offset = if value == 0 { 1 } else { value } as u16;
+                        self.rom_bank = self.rom_bank & 0b0001_1111 | (offset << 5);
+                    }
+                    MBC1Mode::RAM => {
+                        self.ram_bank = (value & 3) as u16;
+                    }
+                };
+            }
+            0x6000..=0x7FFF => {
+                self.mode = if value & 1 == 0 { MBC1Mode::ROM } else { MBC1Mode::RAM }
+            }
+            0xA000..=0xBFFF => {}
+            _ => panic!()
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum CartridgeType {
     RomOnly, // TODO: Add other type (MBC1, MBC3...etc)
     MBC1,
 }
 
-#[derive(Debug)]
 pub struct Cartridge {
-    pub rom: Vec<u8>,
     pub headers: Headers,
+    pub mbc: Box<dyn MBC>,
 }
 
 #[derive(Debug)]
@@ -63,9 +153,14 @@ impl Cartridge {
 
         let headers = Headers::new(&rom);
 
+        let mbc: Box<dyn MBC> = match headers.cartridge_type {
+            CartridgeType::RomOnly => Box::new(RomOnly::new(rom)),
+            CartridgeType::MBC1 => Box::new(MBC1::new(rom)),
+        };
+
         Cartridge {
-            rom,
             headers,
+            mbc,
         }
     }
 }

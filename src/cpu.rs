@@ -884,12 +884,13 @@ impl Storage {
 #[cfg(test)]
 mod tests {
     use crate::cpu::Cpu;
-    use crate::cartridge::{Headers, Cartridge, CartridgeType};
+    use crate::cartridge::{Headers, Cartridge, CartridgeType, RomOnly};
     use crate::register::Flag;
 
     fn make_cpu() -> Cpu {
         let headers = Headers { cartridge_type: CartridgeType::RomOnly, rom_size: 0, ram_size: 0 };
-        let cart = Cartridge { rom: vec![0; 0x2000], headers };
+        let mbc = RomOnly::new(vec![0; 0x2000]);
+        let cart = Cartridge { mbc: Box::new(mbc), headers };
         Cpu::new(cart, false)
     }
 
