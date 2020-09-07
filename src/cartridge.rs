@@ -23,8 +23,10 @@ impl MBC for RomOnly {
         self.rom[address as usize]
     }
 
-    // Can't write to a RomOnly cartridge
-    fn store(&mut self, _address: u16, _value: u8) {}
+    // You can't technically write to the ROM on a real game boy but it's useful in unit tests
+    fn store(&mut self, address: u16, value: u8) {
+        self.rom[address as usize] = value;
+    }
 }
 
 enum MBC1Mode {

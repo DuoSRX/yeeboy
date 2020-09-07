@@ -67,8 +67,8 @@ impl Memory {
             return
         }
         match address {
-            // 0x0000..=0x7FFF => self.cartridge.rom[address as usize] = value,
-            0x0000..=0x7FFF => {} // TODO: Cartridge ram, MBC...etc
+            // You can't technically write to the ROM on a real game boy but it's useful in unit tests
+            0x0000..=0x7FFF => self.cartridge.mbc.store(address, value),
             0x8000..=0x9FFF => self.gpu.store(address, value),
             0xA000..=0xBFFF => self.cartridge.mbc.store(address, value),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize] = value,
