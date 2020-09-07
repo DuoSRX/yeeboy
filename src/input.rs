@@ -83,10 +83,10 @@ mod tests {
     #[test]
     fn test_get() {
         let mut input = Input::new();
-        assert_eq!(input.get(), 0b1100_0000);
+        assert_eq!(input.get(), 0b1100_1111);
         input.key_down(Button::Select);
-        assert_eq!(input.get(), 0b1100_0000);
-        input.set(0b0010_0000);
-        assert_eq!(input.get(), 0b1110_0100);
+        assert_eq!(input.get(), 0b1100_1111);
+        input.set(0b0001_0000);
+        assert_eq!(input.get(), BUTTONS_FLAG | 0b1101_1011);
     }
 }

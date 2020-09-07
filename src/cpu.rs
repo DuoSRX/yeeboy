@@ -1000,6 +1000,15 @@ mod tests {
 
         let mut cpu = make_cpu();
         cpu.memory.store(cpu.pc, 0x20);
+        cpu.memory.store(cpu.pc + 1, 5);
+        cpu.registers.flag(Flag::Z, false);
+        cpu.step();
+        // +2 bytes for the instruction and the operand
+        assert_eq!(cpu.pc, 0x100 + 2 + 5);
+        assert_eq!(cpu.cycles, 12);
+
+        let mut cpu = make_cpu();
+        cpu.memory.store(cpu.pc, 0x20);
         cpu.registers.flag(Flag::Z, true);
         cpu.step();
         assert_eq!(cpu.pc, 0x102);
