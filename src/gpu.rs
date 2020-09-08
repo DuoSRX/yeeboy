@@ -233,6 +233,35 @@ impl Gpu {
         }
     }
 
+    pub fn render_debug_sprites(&self) -> Vec<u8> {
+        let mut buf = vec![0; 160 * 144 * 3];
+
+        for y_sprite in 0..=4 {
+            for x_sprite in 0..=7 {
+                let sprite = self.oam[y_sprite * 8 + x_sprite];
+
+                for y in 0..=7 {
+                    let ptr = ((sprite.index as i32 * 16) + ((y as i32) * 2)) as u16;
+                    let lo = self.load(0x8000 + ptr);
+                    let hi = self.load(0x8000 + ptr + 1);
+                    for x in 0..=7 {
+                        let p0 = if (hi >> x) & 1 == 1 { 2 } else { 0 };
+                        let p1 = if (lo >> x) & 1 == 1 { 1 } else { 0 };
+                        let pixel = p0 | p1;
+                        let palette = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
+                        let color = self.sprite_pixel_color(palette, pixel) as usize;
+                        let offset = y * 160 + x + (x_sprite * 8) + (y_sprite * 8 * 160);
+                        buf[offset * 3 + 0] = COLOR_MAP[color].0;
+                        buf[offset * 3 + 1] = COLOR_MAP[color].1;
+                        buf[offset * 3 + 2] = COLOR_MAP[color].2;
+                    }
+                }
+            }
+        }
+
+        buf
+    }
+
     fn sprite_pixel_color(&self, palette: u8, pixel: u8) -> u8 {
         match pixel {
             1 => (palette >> 2) & 3,
@@ -355,10 +384,10 @@ impl Gpu {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Sprite {
-    x: u8,
-    y: u8,
-    index: u8,
-    attrs: u8
+    pub x: u8,
+    pub y: u8,
+    pub index: u8,
+    pub attrs: u8
 }
 
 impl Sprite {
