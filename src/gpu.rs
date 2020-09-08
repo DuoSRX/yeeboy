@@ -219,11 +219,12 @@ impl Gpu {
                     if pixel_x >= 0 && pixel_x <= 160 {
                         let mut bit = idx_x;
                         if !sprite.x_flip() { bit = 7 - bit };
-                        let mut pixel = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
-                        if (lo >> bit) & 1 == 1 { pixel |= 1 };
-                        let palette= if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
+                        let p0 = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
+                        let p1 = if (lo >> bit) & 1 == 1 { 1 } else { 0 };
+                        let pixel = p0 | p1;
+                        let palette = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
                         let color = self.sprite_pixel_color(palette, pixel);
-                        if pixel != 0 && sprite.attrs & 0x80 == 0 || self.is_pixel_blank(pixel_x as u8, ly as u8) {
+                        if pixel != 0 || sprite.attrs & 0x80 == 0 && self.is_pixel_blank(pixel_x as u8, ly as u8) {
                             self.set_pixel(pixel_x as u8, ly as u8, color)
                         }
                     }
@@ -245,8 +246,9 @@ impl Gpu {
                     let lo = self.load(0x8000 + ptr);
                     let hi = self.load(0x8000 + ptr + 1);
                     for x in 0..=7 {
-                        let p0 = if (hi >> x) & 1 == 1 { 2 } else { 0 };
-                        let p1 = if (lo >> x) & 1 == 1 { 1 } else { 0 };
+                        let bit = 7 - x;
+                        let p0 = if (hi >> bit) & 1 == 1 { 2 } else { 0 };
+                        let p1 = if (lo >> bit) & 1 == 1 { 1 } else { 0 };
                         let pixel = p0 | p1;
                         let palette = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
                         let color = self.sprite_pixel_color(palette, pixel) as usize;

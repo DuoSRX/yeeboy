@@ -731,7 +731,7 @@ impl Cpu {
         let start = (value as u16) << 8;
         for offset in 0..=0x9F {
             let byte = self.load(start + offset);
-            self.memory.gpu.oam_store(offset, byte);
+            self.memory.store(0xFE00 + offset, byte);
         }
         self.cycles += 160;
     }
