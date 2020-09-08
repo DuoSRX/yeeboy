@@ -44,15 +44,6 @@ impl YeeboyWindow {
     }
 
     pub fn update(&mut self, frame: &[u8]) {
-        // let mut buf = vec![0; 160 * 144 * 3];
-        // for y in 0..144 {
-        //     for x in 0..160 {
-        //         buf[x + 160 * y] = (y + x) as u8;
-        //         buf[x + 160 * y + 1] = (y + x) as u8;
-        //         buf[x + 160 * y + 2] = (y + x) as u8;
-        //     }
-        // }
-
         self.texture.update(None, &frame, 160 * 3).unwrap();
         self.canvas.clear();
         self.canvas.copy(&self.texture, None, None).unwrap();
@@ -72,6 +63,8 @@ impl YeeboyWindow {
     fn make_canvas(video: &VideoSubsystem) -> WindowCanvas {
         let window = video.window("OAM Viewer", 480, 432)
             .resizable()
+            .position(0, 0)
+            .hidden()
             .allow_highdpi()
             .opengl()
             .build()
@@ -140,10 +133,6 @@ fn main() {
 
             oam.update(&cpu.memory.gpu.render_debug_sprites());
 
-        // for sprite in cpu.memory.gpu.oam.iter() {
-        //     dbg!(sprite);
-        // }
-
             // This should be outside of the new_frame condition but due to
             // a perf regression in SDL 2.0.9 we have to leave it here to
             // prevent horribly slow polling performance. Meh.
@@ -154,7 +143,6 @@ fn main() {
                     },
                     Event::KeyDown { keycode: Some(Keycode::O), .. } => {
                         oam.toggle();
-                        // oam.update();
                     }
                     Event::KeyDown { keycode: Some(keycode), .. } => {
                         if let Some(button) = keycode_to_button(keycode) {
