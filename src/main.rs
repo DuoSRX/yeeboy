@@ -14,9 +14,12 @@ use std::path::PathBuf;
 use std::time::{Instant, Duration};
 
 use clap::Clap;
+use sdl2::VideoSubsystem;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+// use sdl2::video::WindowContext;
+use sdl2::render::{Texture, WindowCanvas};
 
 #[derive(Clap,Debug)]
 #[clap(version = "0.1.0", author = "Xavier Perez <duosrx@gmail.com>")]
@@ -24,6 +27,63 @@ struct Opts {
     rom: PathBuf,
     #[clap(long, short)]
     trace: bool,
+}
+struct YeeboyWindow {
+    canvas: WindowCanvas,
+    texture: Texture,
+    visible: bool,
+}
+
+impl YeeboyWindow {
+    pub fn new(video: &VideoSubsystem) -> Self {
+        let canvas = Self::make_canvas(video);
+        let texture_creator = canvas.texture_creator();
+        let texture = texture_creator.create_texture_target(PixelFormatEnum::RGB24, 160, 144).unwrap();
+
+        Self { canvas, texture, visible: false }
+    }
+
+    pub fn update(&mut self, frame: &[u8]) {
+        // let mut buf = vec![0; 160 * 144 * 3];
+        // for y in 0..144 {
+        //     for x in 0..160 {
+        //         buf[x + 160 * y] = (y + x) as u8;
+        //         buf[x + 160 * y + 1] = (y + x) as u8;
+        //         buf[x + 160 * y + 2] = (y + x) as u8;
+        //     }
+        // }
+
+        self.texture.update(None, &frame, 160 * 3).unwrap();
+        self.canvas.clear();
+        self.canvas.copy(&self.texture, None, None).unwrap();
+        self.canvas.present()
+    }
+
+    pub fn toggle(&mut self) {
+        if self.visible {
+            self.canvas.window_mut().hide();
+        } else {
+            self.canvas.window_mut().show();
+        }
+
+        self.visible = !self.visible;
+    }
+
+    fn make_canvas(video: &VideoSubsystem) -> WindowCanvas {
+        let window = video.window("OAM Viewer", 480, 432)
+            .resizable()
+            .allow_highdpi()
+            .opengl()
+            .build()
+            .unwrap();
+
+        let canvas = window
+            .into_canvas()
+            .build()
+            .unwrap();
+
+        canvas
+    }
 }
 
 fn main() {
@@ -53,13 +113,13 @@ fn main() {
     canvas.clear();
     canvas.present();
 
+    let mut oam = YeeboyWindow::new(&video_subsystem);
+
     let tex_creator = canvas.texture_creator();
     let mut texture = tex_creator.create_texture_target(PixelFormatEnum::RGB24, 160, 144).unwrap();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
-
     let mut now = Instant::now();
-
     let mut cpu = cpu::Cpu::new(cartridge, opts.trace);
 
     'running: loop {
@@ -78,6 +138,12 @@ fn main() {
             cpu.memory.gpu.new_frame = false;
             cpu.memory.gpu.frame_count += 1;
 
+            oam.update(&cpu.memory.gpu.render_debug_sprites());
+
+        // for sprite in cpu.memory.gpu.oam.iter() {
+        //     dbg!(sprite);
+        // }
+
             // This should be outside of the new_frame condition but due to
             // a perf regression in SDL 2.0.9 we have to leave it here to
             // prevent horribly slow polling performance. Meh.
@@ -86,6 +152,10 @@ fn main() {
                     Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                         break 'running
                     },
+                    Event::KeyDown { keycode: Some(Keycode::O), .. } => {
+                        oam.toggle();
+                        // oam.update();
+                    }
                     Event::KeyDown { keycode: Some(keycode), .. } => {
                         if let Some(button) = keycode_to_button(keycode) {
                             cpu.memory.input.key_down(button);
@@ -100,7 +170,7 @@ fn main() {
                 }
             }
 
-            ::std::thread::sleep(Duration::from_secs_f64(1.0/70.0));
+            ::std::thread::sleep(Duration::from_secs_f64(1.0/200.0));
 
             if now.elapsed().as_secs() > 1 {
                 canvas

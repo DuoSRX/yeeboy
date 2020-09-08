@@ -20,12 +20,21 @@ impl RomOnly {
 
 impl MBC for RomOnly {
     fn load(&self, address: u16) -> u8 {
-        self.rom[address as usize]
+        match address {
+            0x0000..=0x7FFF => self.rom[address as usize],
+            // 0xA000..=0xBFFF => 0,
+            _ => panic!(),
+        }
     }
 
     // You can't technically write to the ROM on a real game boy but it's useful in unit tests
     fn store(&mut self, address: u16, value: u8) {
-        self.rom[address as usize] = value;
+        match address {
+            0x0000..=0x7FFF => {},
+            // 0x0000..=0x7FFF => self.rom[address as usize] = value,
+            // 0xA000..=0xBFFF => {},
+            _ => panic!("{:04X} {:02X}", address, value),
+        }
     }
 }
 
@@ -107,7 +116,7 @@ impl MBC3 {
         Self {
             rom_bank: 1,
             ram_bank: 0,
-            ram: vec![0; 0x800],
+            ram: vec![0; 1048576],
             rom,
         }
     }
