@@ -44,6 +44,10 @@ impl YeeboyWindow {
     }
 
     pub fn update(&mut self, frame: &[u8]) {
+        if !self.visible {
+            return
+        }
+
         self.texture.update(None, &frame, 160 * 3).unwrap();
         self.canvas.clear();
         self.canvas.copy(&self.texture, None, None).unwrap();
