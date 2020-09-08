@@ -28,19 +28,17 @@ Keep in mind that it has a negative impact on performance, depending on your ter
   * [x] ~~CB Instructions~~
 * [x] Timers
 * [x] Interrupts
-* [ ] GPU
+* [x] GPU
   * [x] ~~Background~~
   * [x] Sprites
-    * ~~Y Flip doesn't work properly~~
-    * ~~Sprite a flipped horizontally on themselves~~
   * [x] Windows
     * Needs more testing
 * [ ] Cartridges
   * [x] ROM
   * [x] Headers
-  * [ ] MBC
+  * [X] MBC
     [ ] MBC1 (WIP)
-    [ ] MBC3
+    [X] MBC3
 * [ ] Graphics
   * [x] ~~SDL Frontend~~
   * [ ] WASM in browser
@@ -51,6 +49,11 @@ Keep in mind that it has a negative impact on performance, depending on your ter
 * [ ] Save
 * [ ] Logger
 * [ ] Debugger
+* [ ] GPU Debugging windows
+  * [X] OAM Viewer
+  * [ ]Tile map
+  * [ ]Background map
+  * [ ]Palettes
 * [ ] Config file
 * [ ] Automated testing
 
@@ -68,16 +71,15 @@ Keep in mind that it has a negative impact on performance, depending on your ter
 * [x] ~~10-bit_ops~~
 * [x] ~~11-op_a_hl~~
 
-
 ## Playable games
 
 * Dr Mario
+* Tetris
 
 ## Games that boot but are unplayble
 
-* Tetris
-  * Boot and "playable" but the tetrominos are invisible
+* Pokemon Red
 
 ## Games that won't even start or black screen
 
-* Pokemon Red
+Any game that isn't RomOnly, MBC1 or MBC3
