@@ -66,6 +66,7 @@ impl Gpu {
 
     pub fn step(&mut self, cycles: u64) {
         self.cycles += cycles;
+        self.new_frame = false;
         self.interrupts = 0;
 
         match self.mode {

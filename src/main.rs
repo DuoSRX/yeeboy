@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 pub mod cartridge;
+pub mod console;
 pub mod cpu;
 pub mod gpu;
 pub mod input;
@@ -101,20 +102,12 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut now = Instant::now();
-    let mut cpu = cpu::Cpu::new(cartridge, opts.trace);
+    let mut console = console::Console::new(cartridge, opts.trace);
 
     'running: loop {
-        let prev_cy = cpu.cycles;
-        cpu.step();
-        let elapsed = cpu.cycles - prev_cy;
-
-        cpu.memory.gpu.step(elapsed);
-        let lcd_on = cpu.memory.gpu.lcd_on();
-
-        if cpu.memory.gpu.new_frame && lcd_on {
-            window.update(&cpu.memory.gpu.frame);
-            oam.update(&cpu.memory.gpu.render_debug_sprites());
-            cpu.memory.gpu.new_frame = false;
+        if console.new_frame() {
+            window.update(&console.cpu.memory.gpu.frame);
+            oam.update(&console.cpu.memory.gpu.render_debug_sprites());
 
             // This should be outside of the new_frame condition but due to
             // a perf regression in SDL 2.0.9 we have to leave it here to
@@ -129,12 +122,12 @@ fn main() {
                     }
                     Event::KeyDown { keycode: Some(keycode), .. } => {
                         if let Some(button) = keycode_to_button(keycode) {
-                            cpu.memory.input.key_down(button);
+                            console.key_down(button);
                         }
                     }
                     Event::KeyUp { keycode: Some(keycode), .. } => {
                         if let Some(button) = keycode_to_button(keycode) {
-                            cpu.memory.input.key_up(button);
+                            console.key_up(button);
                         }
                     }
                     _ => {}
@@ -146,23 +139,12 @@ fn main() {
             if now.elapsed().as_secs() > 1 {
                 window.canvas
                     .window_mut()
-                    .set_title(&format!("YeeBoy - {} FPS", cpu.memory.gpu.frame_count))
+                    .set_title(&format!("YeeBoy - {} FPS", console.cpu.memory.gpu.frame_count))
                     .unwrap();
-                cpu.memory.gpu.frame_count = 0;
+                console.cpu.memory.gpu.frame_count = 0;
                 now = Instant::now();
             }
         }
-
-        if cpu.memory.timer.tick(elapsed) {
-            cpu.request_interrupt(4);
-        }
-
-        if cpu.memory.gpu.interrupts > 0 {
-            cpu.request_interrupt(cpu.memory.gpu.interrupts);
-            cpu.memory.gpu.interrupts = 0;
-        }
-
-        cpu.interrupt();
     }
 }
 
