@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io::prelude::*;
-
 pub trait MBC {
     fn load(&self, address: u16) -> u8;
     fn store(&mut self, address: u16, value: u8);
@@ -211,14 +208,7 @@ impl Headers {
 }
 
 impl Cartridge {
-    pub fn load(file: &mut File) -> Cartridge {
-        // let headers = Headers {
-        //     garbage: [0xFF; 100],
-        // };
-
-        let mut rom = Vec::new();
-        file.read_to_end(&mut rom).expect("Cannot read file");
-
+    pub fn load(rom: Vec<u8>) -> Cartridge {
         let headers = Headers::new(&rom);
 
         let mbc: Box<dyn MBC> = match headers.cartridge_type {

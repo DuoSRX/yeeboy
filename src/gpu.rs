@@ -57,7 +57,7 @@ impl Gpu {
             bg_palette: 0,
             obj_palette_0: 0,
             obj_palette_1: 0,
-            frame: vec![0; 160 * 144 * 3],
+            frame: vec![0; 160 * 144 * 4],
             vram: vec![0; 0x2000],
             oam: vec![Sprite::new(); 0x40],
             new_frame: false,
@@ -255,9 +255,10 @@ impl Gpu {
                         let palette = if sprite.attrs & 0x8 == 0 { self.obj_palette_0 } else { self.obj_palette_1 };
                         let color = self.sprite_pixel_color(palette, pixel) as usize;
                         let offset = y * 160 + x + (x_sprite * 8) + (y_sprite * 8 * 160);
-                        buf[offset * 3 + 0] = COLOR_MAP[color].0;
-                        buf[offset * 3 + 1] = COLOR_MAP[color].1;
-                        buf[offset * 3 + 2] = COLOR_MAP[color].2;
+                        buf[offset * 4 + 0] = COLOR_MAP[color].0;
+                        buf[offset * 4 + 1] = COLOR_MAP[color].1;
+                        buf[offset * 4 + 2] = COLOR_MAP[color].2;
+                        buf[offset * 4 + 3] = 0xFF;
                     }
                 }
             }
@@ -334,9 +335,10 @@ impl Gpu {
     fn set_pixel(&mut self, x: u8, y: u8, color: u8) {
         let offset = y as usize * 160 + x as usize;
         let color = color as usize;
-        self.frame[offset*3] = COLOR_MAP[color].0;
-        self.frame[offset*3+1] = COLOR_MAP[color].1;
-        self.frame[offset*3+2] = COLOR_MAP[color].2;
+        self.frame[offset*4] = COLOR_MAP[color].0;
+        self.frame[offset*4+1] = COLOR_MAP[color].1;
+        self.frame[offset*4+2] = COLOR_MAP[color].2;
+        self.frame[offset*4+3] = 0xFF;
     }
 
     fn is_pixel_blank(&mut self, x: u8, y: u8) -> bool {

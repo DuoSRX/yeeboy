@@ -35,6 +35,10 @@ impl Console {
         self.cpu.memory.gpu.new_frame
     }
 
+    pub fn frame(&self) -> &[u8] {
+        &self.cpu.memory.gpu.frame
+    }
+
     pub fn key_down(&mut self, button: Button) {
         self.cpu.memory.input.key_down(button);
     }
