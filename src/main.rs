@@ -29,18 +29,20 @@ struct Opts {
     trace: bool,
 }
 struct YeeboyWindow {
-    canvas: WindowCanvas,
+    pub canvas: WindowCanvas,
     texture: Texture,
+    width: u32,
+    height: u32,
     visible: bool,
 }
 
 impl YeeboyWindow {
-    pub fn new(video: &VideoSubsystem) -> Self {
-        let canvas = Self::make_canvas(video);
+    pub fn new(width: u32, height: u32, video: &VideoSubsystem) -> Self {
+        let canvas = Self::make_canvas(width * 3, height * 3, video);
         let texture_creator = canvas.texture_creator();
-        let texture = texture_creator.create_texture_target(PixelFormatEnum::RGB24, 160, 144).unwrap();
+        let texture = texture_creator.create_texture_target(PixelFormatEnum::RGB24, width, height).unwrap();
 
-        Self { canvas, texture, visible: false }
+        Self { canvas, texture, height, width, visible: true }
     }
 
     pub fn update(&mut self, frame: &[u8]) {
@@ -48,7 +50,7 @@ impl YeeboyWindow {
             return
         }
 
-        self.texture.update(None, &frame, 160 * 3).unwrap();
+        self.texture.update(None, &frame, self.width as usize * 3).unwrap();
         self.canvas.clear();
         self.canvas.copy(&self.texture, None, None).unwrap();
         self.canvas.present()
@@ -56,19 +58,21 @@ impl YeeboyWindow {
 
     pub fn toggle(&mut self) {
         if self.visible {
-            self.canvas.window_mut().hide();
+            self.hide();
         } else {
-            self.canvas.window_mut().show();
+            self.show();
         }
 
         self.visible = !self.visible;
     }
 
-    fn make_canvas(video: &VideoSubsystem) -> WindowCanvas {
-        let window = video.window("OAM Viewer", 480, 432)
+    pub fn hide(&mut self) { self.canvas.window_mut().hide() }
+    pub fn show(&mut self) { self.canvas.window_mut().show() }
+
+    fn make_canvas(width: u32, height: u32, video: &VideoSubsystem) -> WindowCanvas {
+        let window = video.window("OAM Viewer", width, height)
             .resizable()
             .position(0, 0)
-            .hidden()
             .allow_highdpi()
             .opengl()
             .build()
@@ -92,28 +96,8 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("YeeBoy", 480, 432)
-        .position_centered()
-        .resizable()
-        .allow_highdpi()
-        .opengl()
-        .build()
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    let mut canvas = window
-        .into_canvas()
-        .build()
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    canvas.clear();
-    canvas.present();
-
-    let mut oam = YeeboyWindow::new(&video_subsystem);
-
-    let tex_creator = canvas.texture_creator();
-    let mut texture = tex_creator.create_texture_target(PixelFormatEnum::RGB24, 160, 144).unwrap();
+    let mut oam = YeeboyWindow::new(160, 144, &video_subsystem);
+    let mut window = YeeboyWindow::new(160, 144, &video_subsystem);
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut now = Instant::now();
@@ -128,14 +112,9 @@ fn main() {
         let lcd_on = cpu.memory.gpu.lcd_on();
 
         if cpu.memory.gpu.new_frame && lcd_on {
-            texture.update(None, &cpu.memory.gpu.frame, 160 * 3).unwrap();
-            canvas.clear();
-            canvas.copy(&texture, None, None).unwrap();
-            canvas.present();
-            cpu.memory.gpu.new_frame = false;
-            cpu.memory.gpu.frame_count += 1;
-
+            window.update(&cpu.memory.gpu.frame);
             oam.update(&cpu.memory.gpu.render_debug_sprites());
+            cpu.memory.gpu.new_frame = false;
 
             // This should be outside of the new_frame condition but due to
             // a perf regression in SDL 2.0.9 we have to leave it here to
@@ -162,10 +141,10 @@ fn main() {
                 }
             }
 
-            ::std::thread::sleep(Duration::from_secs_f64(1.0/200.0));
+            // ::std::thread::sleep(Duration::from_secs_f64(1.0/200.0));
 
             if now.elapsed().as_secs() > 1 {
-                canvas
+                window.canvas
                     .window_mut()
                     .set_title(&format!("YeeBoy - {} FPS", cpu.memory.gpu.frame_count))
                     .unwrap();
@@ -184,11 +163,6 @@ fn main() {
         }
 
         cpu.interrupt();
-
-        // if !cpu.memory.serial.is_empty() {
-        //     let c = cpu.memory.serial.remove(0);
-        //     print!("{}", c);
-        // }
     }
 }
 
