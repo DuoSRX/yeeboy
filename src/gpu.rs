@@ -94,6 +94,7 @@ impl Gpu {
                 if self.ly == 144 {
                     self.interrupts = 1;
                     self.new_frame = true;
+                    self.frame_count += 1;
                     self.set_mode(VBlank);
                 } else {
                     self.set_mode(OamRead);
