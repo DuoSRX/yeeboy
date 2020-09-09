@@ -105,6 +105,8 @@ fn main() {
     let mut console = console::Console::new(cartridge, opts.trace);
 
     'running: loop {
+        console.step();
+
         if console.new_frame() {
             window.update(&console.cpu.memory.gpu.frame);
             oam.update(&console.cpu.memory.gpu.render_debug_sprites());
