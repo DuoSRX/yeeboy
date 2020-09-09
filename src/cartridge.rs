@@ -42,12 +42,13 @@ enum MBC1Mode {
     RAM, ROM
 }
 
+#[allow(dead_code)]
 pub struct MBC1 {
     mode: MBC1Mode,
     rom_bank: u16,
     ram_bank: u16,
     rom: Vec<u8>,
-    ram: Vec<u8>,
+    ram: Vec<u8>, // TODO: Use this
 }
 
 impl MBC1 {
