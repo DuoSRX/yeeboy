@@ -713,14 +713,6 @@ impl Cpu {
         self.memory.store(address, value);
     }
 
-    fn storage_load(&mut self, storage: Storage) -> u8 {
-        storage.load(self)
-    }
-
-    fn storage_store(&mut self, storage: Storage, value: u8) {
-        storage.store(self, value);
-    }
-
     fn push16(&mut self, value: u16) {
         let sp = self.registers.sp.wrapping_sub(2);
         self.memory.store16(sp, value);

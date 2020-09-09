@@ -1,14 +1,10 @@
 #![allow(dead_code)]
 
-pub mod cartridge;
-pub mod console;
-pub mod cpu;
-pub mod gpu;
-pub mod input;
-pub mod opcodes;
-pub mod memory;
-pub mod register;
-pub mod timer;
+extern crate yeeboy;
+
+use yeeboy::cartridge::Cartridge;
+use yeeboy::console::Console;
+use yeeboy::input;
 
 use std::fs::File;
 use std::path::PathBuf;
@@ -19,7 +15,6 @@ use sdl2::VideoSubsystem;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-// use sdl2::video::WindowContext;
 use sdl2::render::{Texture, WindowCanvas};
 
 #[derive(Clap,Debug)]
@@ -91,7 +86,7 @@ impl YeeboyWindow {
 fn main() {
     let opts = Opts::parse();
     let mut file = File::open(opts.rom).unwrap();
-    let cartridge = cartridge::Cartridge::load(&mut file);
+    let cartridge = Cartridge::load(&mut file);
     dbg!(&cartridge.headers);
 
     let sdl_context = sdl2::init().unwrap();
@@ -102,7 +97,7 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut now = Instant::now();
-    let mut console = console::Console::new(cartridge, opts.trace);
+    let mut console = Console::new(cartridge, opts.trace);
 
     'running: loop {
         console.step();
@@ -136,7 +131,7 @@ fn main() {
                 }
             }
 
-            // ::std::thread::sleep(Duration::from_secs_f64(1.0/200.0));
+            ::std::thread::sleep(Duration::from_secs_f64(1.0/200.0));
 
             if now.elapsed().as_secs() > 1 {
                 window.canvas
