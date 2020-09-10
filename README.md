@@ -25,24 +25,23 @@ Keep in mind that it has a negative impact on performance, depending on your ter
 * [x] Basic architecture and organization
 * [ ] CPU Instructions
   * [ ] Still missing a few (check opcodes.rs)
-  * [x] ~~CB Instructions~~
+  * [x] CB Instructions
 * [x] Timers
 * [x] Interrupts
 * [x] GPU
-  * [x] ~~Background~~
+  * [x] Backgrounds
   * [x] Sprites
   * [x] Windows
     * Needs more testing
 * [ ] Cartridges
   * [x] ROM
   * [x] Headers
-  * [X] MBC
-    [ ] MBC1 (WIP)
-    [X] MBC3
-* [x] Graphics
-  * [x] ~~SDL Frontend~~
-  * [x] WASM in browser
-* [x] ~~Controllers~~
+  * [ ] MBC1 (WIP)
+  * [X] MBC3
+* [x] Frontends
+  * [x] SDL2
+  * [x] WASM
+* [x] Controllers
 * [x] CLI flags
 * [ ] Timing is off (need to add a frame limiter)
 * [ ] Audio
@@ -51,9 +50,9 @@ Keep in mind that it has a negative impact on performance, depending on your ter
 * [ ] Debugger
 * [ ] GPU Debugging windows
   * [X] OAM Viewer
-  * [ ]Tile map
-  * [ ]Background map
-  * [ ]Palettes
+  * [ ] Tile map
+  * [ ] Background map
+  * [ ] Palettes
 * [ ] Config file
 * [ ] Automated testing
 
