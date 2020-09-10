@@ -11,9 +11,3 @@ pub mod timer;
 pub fn blah() -> String {
     "Foo".into()
 }
-
-        // let mut rom = Vec::new();
-        // file.read_to_end(&mut rom).expect("Cannot read file");
-// use std::fs::File;
-// use std::io::prelude::*;
-

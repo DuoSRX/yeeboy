@@ -9,6 +9,7 @@ use yeeboy::input;
 use std::fs::File;
 use std::path::PathBuf;
 use std::time::{Instant, Duration};
+use std::io::prelude::*;
 
 use clap::Clap;
 use sdl2::VideoSubsystem;
@@ -36,7 +37,7 @@ impl YeeboyWindow {
     pub fn new(width: u32, height: u32, video: &VideoSubsystem) -> Self {
         let canvas = Self::make_canvas(width * 3, height * 3, video);
         let texture_creator = canvas.texture_creator();
-        let texture = texture_creator.create_texture_target(PixelFormatEnum::RGB24, width, height).unwrap();
+        let texture = texture_creator.create_texture_target(PixelFormatEnum::RGBA32, width, height).unwrap();
 
         Self { canvas, texture, height, width, visible: true }
     }
@@ -46,7 +47,7 @@ impl YeeboyWindow {
             return
         }
 
-        self.texture.update(None, &frame, self.width as usize * 3).unwrap();
+        self.texture.update(None, &frame, self.width as usize * 4).unwrap();
         self.canvas.clear();
         self.canvas.copy(&self.texture, None, None).unwrap();
         self.canvas.present()
@@ -85,8 +86,11 @@ impl YeeboyWindow {
 
 fn main() {
     let opts = Opts::parse();
+
     let mut file = File::open(opts.rom).unwrap();
-    let cartridge = Cartridge::load(&mut file);
+    let mut rom = Vec::new();
+    file.read_to_end(&mut rom).expect("Cannot read file");
+    let cartridge = Cartridge::load(rom);
     dbg!(&cartridge.headers);
 
     let sdl_context = sdl2::init().unwrap();
