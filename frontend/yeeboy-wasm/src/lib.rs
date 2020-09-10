@@ -11,6 +11,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[wasm_bindgen]
 pub struct Console {
     console: yeeboy::console::Console,
+    paused: bool,
 }
 
 #[wasm_bindgen]
@@ -19,7 +20,13 @@ impl Console {
         let bytes = include_bytes!("../../../roms/drmario.gb");
         let cartridge = yeeboy::cartridge::Cartridge::load(bytes.to_vec());
         let console = yeeboy::console::Console::new(cartridge, false);
-        Console { console }
+        Console { console, paused: false }
+    }
+
+    pub fn run(&mut self) {
+        while !self.paused {
+            self.step();
+        }
     }
 
     pub fn step(&mut self) {

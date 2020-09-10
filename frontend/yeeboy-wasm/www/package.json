@@ -30,6 +30,7 @@
     "copy-webpack-plugin": "^5.0.0"
   },
   "dependencies": {
+    "vue": "^2.6.12",
     "yeeboy": "file:../pkg"
   }
 }

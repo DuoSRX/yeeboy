@@ -16,11 +16,13 @@
         justify-content: center;
       }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   </head>
   <body>
-    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
-    <canvas id="console-canvas"></canvas>
-    <span id="console-pc">0</span>
+    <div id="app">
+      <canvas id="console-canvas"></canvas>
+      <button v-on:click="pause()">{{ pauseText() }}</button>
+    </div>
     <script src="./bootstrap.js"></script>
   </body>
 </html>
