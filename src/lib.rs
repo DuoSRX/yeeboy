@@ -7,7 +7,3 @@ pub mod opcodes;
 pub mod memory;
 pub mod register;
 pub mod timer;
-
-pub fn blah() -> String {
-    "Foo".into()
-}
