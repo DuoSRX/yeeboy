@@ -54,6 +54,26 @@ impl Console {
         self.console.cpu.pc
     }
 
+    pub fn key_up(&mut self, key: &str) -> bool {
+        match Self::key_to_button(key) {
+            Some(button) => {
+                self.console.key_up(button);
+                true
+            }
+            None => false
+        }
+    }
+
+    pub fn key_down(&mut self, key: &str) -> bool {
+        match Self::key_to_button(key) {
+            Some(button) => {
+                self.console.key_down(button);
+                true
+            },
+            None => false
+        }
+    }
+
     pub fn regs(&self) -> String {
         use yeeboy::register::Register16::*;
         format!(
@@ -66,5 +86,20 @@ impl Console {
             "",
             self.console.cpu.pc,
         )
+    }
+
+    fn key_to_button(key: &str) -> Option<yeeboy::input::Button> {
+        use yeeboy::input::Button::*;
+        match key.as_ref() {
+            "ArrowDown" => Some(Down),
+            "ArrowLeft" => Some(Left),
+            "ArrowRight" => Some(Right),
+            "ArrowUp" => Some(Up),
+            "x" => Some(B),
+            "z" => Some(A),
+            "Enter" => Some(Start),
+            " " => Some(Select),
+            _ => None
+        }
     }
 }
