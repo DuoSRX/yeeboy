@@ -39,9 +39,9 @@ Keep in mind that it has a negative impact on performance, depending on your ter
   * [X] MBC
     [ ] MBC1 (WIP)
     [X] MBC3
-* [ ] Graphics
+* [x] Graphics
   * [x] ~~SDL Frontend~~
-  * [ ] WASM in browser
+  * [x] WASM in browser
 * [x] ~~Controllers~~
 * [x] CLI flags
 * [ ] Timing is off (need to add a frame limiter)
@@ -75,8 +75,9 @@ Keep in mind that it has a negative impact on performance, depending on your ter
 
 * Dr Mario
 * Tetris
+* Super Mario Land
 
-## Games that boot but are unplayble
+## Games that boot but are glitchy/unplayble
 
 * Pokemon Red
 
