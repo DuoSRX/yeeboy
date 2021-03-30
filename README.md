@@ -4,28 +4,47 @@ Yet another Game Boy emulator.
 
 Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com/DuoSRX/yobml) written in ReasonML.
 
-## Usage
+## Usage (native)
 
-`$ cargo run --release -- path/to/rom-file`
+```
+$ cd frontend/yeeboy-sdl2
+$ cargo run --release -- path/to/rom-file
+```
 
 Optionally provide `--trace` to have the emulator spew out every instruction while it's running.
 Keep in mind that it has a negative impact on performance, depending on your terminal of choice.
 
+## Usage (WASM)
+
+```
+$ cd frontend/yeeboy-wasm
+$ wasm-pack build
+$ cd www
+$ npm run start
+```
+
+The emulator will be available at http://localhost:8080
+
 ## Controls (not configurable yet)
 
-* A -> X
-* B -> Z
-* Select -> Left Shit
-* Start -> Space
-* D-Pad -> Arrow keys
-* Escape -> Quit
+| Keyboard    | GameBoy |
+| ----------- | ------- |
+| X           | A       |
+| B           | Z       |
+| Left Shift  | Select  |
+| Space       | Start   |
+| Up arrow    | Up      |
+| Down arrow  | Down    |
+| Left arrow  | Left    |
+| Right arrow | Right   |
+| Escape      | Quit    |
 
-## TODO:
+## TODO
 
 * [x] Basic architecture and organization
 * [ ] CPU Instructions
-  * [ ] Still missing a few (check opcodes.rs)
   * [x] CB Instructions
+  * [ ] Still missing a few obscure instructions (check opcodes.rs)
 * [x] Timers
 * [x] Interrupts
 * [x] GPU
