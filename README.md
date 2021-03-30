@@ -4,6 +4,8 @@ Yet another Game Boy emulator.
 
 Essentially a rewrite in Rust of my other [Game Boy emulator](https://github.com/DuoSRX/yobml) written in ReasonML.
 
+![Screen Shot 2020-09-09 at 4 29 24 PM](https://user-images.githubusercontent.com/297454/113034581-1969c600-9147-11eb-8a56-1e068495c9ca.png)
+
 ## Usage (native)
 
 ```
