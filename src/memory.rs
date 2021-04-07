@@ -37,7 +37,7 @@ impl Memory {
             0xA000..=0xBFFF => self.cartridge.mbc.load(address),
             0xC000..=0xDFFF => self.work_ram[(address & 0x1FFF) as usize],
             0xE000..=0xFDFF => self.work_ram[((address - 0x2000) & 0x1FFF) as usize],
-            0xFE00..=0xFE9F => 0, // TODO: OAM
+            0xFE00..=0xFE9F => self.gpu.voam[address as usize - 0xFE00],
             0xFEA0..=0xFEFF => 0, // No-op
             0xFF00 => self.input.get(),
             0xFF04 => self.timer.div,

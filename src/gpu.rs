@@ -28,6 +28,7 @@ pub struct Gpu {
     pub vram: Vec<u8>,
     pub interrupts: u8,
     pub oam: Vec<Sprite>,
+    pub voam: Vec<u8>,
     pub new_frame: bool,
     pub control: u8,
     pub scroll_x: u8,
@@ -60,6 +61,7 @@ impl Gpu {
             frame: vec![0; 160 * 144 * 4],
             vram: vec![0; 0x2000],
             oam: vec![Sprite::new(); 0x40],
+            voam: vec![0; 0x200],
             new_frame: false,
         }
     }
@@ -319,6 +321,8 @@ impl Gpu {
     }
 
     pub fn oam_store(&mut self, address: u16, value: u8) {
+        self.voam[address as usize] = value;
+
         let idx = (address / 4) as usize;
         let attr = address % 4;
         let sprite = &mut self.oam[idx];
