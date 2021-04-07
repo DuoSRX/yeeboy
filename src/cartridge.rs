@@ -4,13 +4,15 @@ pub trait MBC {
 }
 
 pub struct RomOnly {
-    rom: Vec<u8>
+    rom: Vec<u8>,
+    ram: Vec<u8>,
 }
 
 impl RomOnly {
     pub fn new(rom: Vec<u8>) -> Self {
         Self {
-            rom
+            rom,
+            ram: vec![0; 0x2000],
         }
     }
 }
@@ -19,7 +21,7 @@ impl MBC for RomOnly {
     fn load(&self, address: u16) -> u8 {
         match address {
             0x0000..=0x7FFF => self.rom[address as usize],
-            // 0xA000..=0xBFFF => 0,
+            0xA000..=0xBFFF => self.ram[address as usize - 0xA000],
             _ => panic!(),
         }
     }
@@ -29,7 +31,7 @@ impl MBC for RomOnly {
         match address {
             0x0000..=0x7FFF => {},
             // 0x0000..=0x7FFF => self.rom[address as usize] = value,
-            // 0xA000..=0xBFFF => {},
+            0xA000..=0xBFFF => self.ram[address as usize - 0xA000] = value,
             _ => panic!("{:04X} {:02X}", address, value),
         }
     }
