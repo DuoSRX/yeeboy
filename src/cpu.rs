@@ -166,7 +166,11 @@ impl Cpu {
             if self.registers.has_flag(f) { format!("{:?}", f) } else { "-".into() }
         ).collect::<Vec<String>>().join("");
 
-        format!(
+        // if self.load(self.pc) == 0xFF && self.load(self.pc + 1) == 0xFF {
+        //     panic!();
+        // }
+
+        let s = format!(
             "AF:{:04X} BC:{:04X} DE:{:04X} HL:{:04X} SP:{:04X} [{}] {:04X}: {:02X} {:02X} {:02X}  {}",
             self.registers.get16(AF),
             self.registers.get16(BC),
@@ -179,7 +183,17 @@ impl Cpu {
             self.load(self.pc + 1),
             self.load(self.pc + 2),
             instruction,
-        )
+        );
+
+        // if self.load(self.pc) == 0x18 && self.load(self.pc + 1) == 0xFD {
+        //     println!("{}", s);
+        //     panic!();
+        // }
+        if self.load(self.pc) == 0x40 && self.load(self.pc + 1) == 0x00 {
+            println!("{}", s);
+            panic!();
+        }
+        s
     }
 
     pub fn decode(opcode: u8) -> &'static (Instruction, u64, &'static str) {

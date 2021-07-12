@@ -121,6 +121,10 @@ impl Gpu {
     }
 
     fn render_background(&mut self) {
+        // for x in 0..160 {
+        //     self.set_pixel(x, self.ly, 0);
+        // }
+
         let palette = self.bg_palette;
         let colors = [
             palette & 3,
@@ -142,7 +146,8 @@ impl Gpu {
             let x = ((scroll_x + px) / 8) % 32;
             let tile = self.load(tile_map.wrapping_add(y * 32).wrapping_add(x));
             let ptr = match tile_data {
-                0x9000 => (tile_data as i32 + (tile as i8 as i32 * 0x10)) as u16,
+                // 0x8800 => (tile_data as i32 + (tile as i8 as i32 * 0x10)) as u16,
+                0x8800 => (tile_data as i32 + (tile as i8 as i32 * 0x10)) as u16,
                 _      => tile_data.wrapping_add(tile as u16 * 0x10),
             };
             let ptr = ptr.wrapping_add(y_offset * 2);
@@ -181,7 +186,7 @@ impl Gpu {
             let x = (px - window_x) / 8;
             let tile = self.load(tile_map.wrapping_add(y * 32).wrapping_add(x as u16));
             let ptr = match tile_data {
-                0x9000 => (tile_data as i32 + (tile as i8 as i32 * 0x10)) as u16,
+                0x8800 => (tile_data as i32 + (tile as i8 as i32 * 0x10)) as u16,
                 _      => tile_data.wrapping_add(tile as u16 * 0x10),
             };
             let ptr = ptr.wrapping_add(y_offset * 2);
@@ -361,7 +366,7 @@ impl Gpu {
     fn tile_data(&self) -> u16 {
         match self.control & 0x10 > 0 {
             true => 0x8000,
-            _    => 0x9000,
+            _    => 0x8800,
         }
     }
 

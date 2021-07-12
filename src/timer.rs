@@ -1,7 +1,7 @@
 #[derive(Default, Debug)]
 pub struct Timer {
     counter: u64,
-    div_counter: u64,
+    pub div_counter: u64,
 
     pub div: u8,  // FF04
     pub tima: u8, // FF05
