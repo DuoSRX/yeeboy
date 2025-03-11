@@ -1,4 +1,4 @@
-import { memory } from "yeeboy/yeeboy_wasm_bg";
+// Import the Console class from the WebAssembly module
 import { Console } from "yeeboy";
 
 const pc = document.getElementById("console-pc");
@@ -8,8 +8,6 @@ canvas.width = 160;
 canvas.height = 144;
 
 const ctx = canvas.getContext('2d');
-
-const gameboy = Console.new();
 
 document.addEventListener("keydown", event => {
   if (gameboy.key_down(event.key)) {
@@ -25,7 +23,7 @@ document.addEventListener("keyup", event => {
   }
 });
 
-const frame = new Uint8Array(memory.buffer, gameboy.frame(), 160 * 144 * 4);
+const gameboy = Console.new();
 
 const renderLoop = () => {
   while (!gameboy.new_frame()) {
@@ -34,7 +32,10 @@ const renderLoop = () => {
 
   gameboy.end_frame();
   pc.innerHTML = gameboy.regs().toString(16);
-  const imageData = new ImageData(new Uint8ClampedArray(frame), 160, 144);
+  
+  const frameData = gameboy.get_frame_data();
+  const imageData = new ImageData(new Uint8ClampedArray(frameData), 160, 144);
+
   ctx.putImageData(imageData, 0, 0);
   requestAnimationFrame(renderLoop);
 }

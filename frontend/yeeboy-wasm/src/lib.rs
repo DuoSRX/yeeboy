@@ -36,7 +36,13 @@ impl Console {
     }
 
     pub fn frame(&self) -> *const u8 {
-        self.console.frame().clone().as_ptr()
+        self.console.frame().as_ptr()
+    }
+    
+    #[wasm_bindgen]
+    pub fn get_frame_data(&self) -> Vec<u8> {
+        // Copy the frame data to a new Vec that can be returned to JavaScript
+        self.console.frame().to_vec()
     }
 
     pub fn pc(&self) -> u16 {
@@ -49,7 +55,7 @@ impl Console {
                 self.console.key_up(button);
                 true
             }
-            None => false
+            None => false,
         }
     }
 
@@ -58,8 +64,8 @@ impl Console {
             Some(button) => {
                 self.console.key_down(button);
                 true
-            },
-            None => false
+            }
+            None => false,
         }
     }
 
@@ -88,7 +94,7 @@ impl Console {
             "z" => Some(A),
             "Enter" => Some(Start),
             " " => Some(Select),
-            _ => None
+            _ => None,
         }
     }
 }
