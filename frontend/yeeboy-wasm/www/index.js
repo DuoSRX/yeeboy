@@ -1,5 +1,5 @@
-// Import the Console class from the WebAssembly module
 import { Console } from "yeeboy";
+import { memory } from "../pkg/yeeboy_wasm_bg.wasm";
 
 const pc = document.getElementById("console-pc");
 
@@ -25,19 +25,30 @@ document.addEventListener("keyup", event => {
 
 const gameboy = Console.new();
 
-const renderLoop = () => {
-  while (!gameboy.new_frame()) {
-    gameboy.step();
+let lastFrameTime = 0;
+const targetFrameRate = 60;
+const frameInterval = 1000 / targetFrameRate; // ~16.67ms per frame at 60 FPS
+
+const frame = new Uint8Array(memory.buffer, gameboy.frame(), 160 * 144 * 4);
+
+const renderLoop = (currentTime) => {
+  const elapsed = currentTime - lastFrameTime;
+
+  if (elapsed >= frameInterval || lastFrameTime === 0) {
+    lastFrameTime = currentTime - (elapsed % frameInterval);
+ 
+    while (!gameboy.new_frame()) {
+      gameboy.step();
+    }
+
+    gameboy.end_frame();
+    pc.innerHTML = gameboy.regs().toString(16);
+
+    const imageData = new ImageData(new Uint8ClampedArray(frame), 160, 144);
+    ctx.putImageData(imageData, 0, 0);
   }
 
-  gameboy.end_frame();
-  pc.innerHTML = gameboy.regs().toString(16);
-  
-  const frameData = gameboy.get_frame_data();
-  const imageData = new ImageData(new Uint8ClampedArray(frameData), 160, 144);
-
-  ctx.putImageData(imageData, 0, 0);
   requestAnimationFrame(renderLoop);
 }
 
-renderLoop();
+requestAnimationFrame(renderLoop);

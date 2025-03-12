@@ -38,12 +38,6 @@ impl Console {
     pub fn frame(&self) -> *const u8 {
         self.console.frame().as_ptr()
     }
-    
-    #[wasm_bindgen]
-    pub fn get_frame_data(&self) -> Vec<u8> {
-        // Copy the frame data to a new Vec that can be returned to JavaScript
-        self.console.frame().to_vec()
-    }
 
     pub fn pc(&self) -> u16 {
         self.console.cpu.pc
